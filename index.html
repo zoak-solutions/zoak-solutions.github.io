@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -158,7 +158,7 @@
     @keyframes pulse-bg { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .6; } }
 
     .hero-inner { position: relative; z-index: 1; max-width: 760px; }
-    .hero-logo { width: min(160px, 28vw); margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
+    .hero-logo { width: min(160px, 28vw); height: auto; max-height: 220px; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
     .hero-eyebrow { animation: fadeInUp .8s .1s ease both; }
     .hero-title { animation: fadeInUp .8s .2s ease both; margin: .75rem 0 1.25rem; }
     .hero-subtitle {
@@ -280,6 +280,76 @@
     .osm-tag:hover { background: rgba(215,136,29,.2); }
     .osm-link { font-size: .85rem; color: var(--color-primary); font-weight: 600; margin-top: .25rem; }
 
+    /* ─── Our Story ───────────────────────────────────────────────────── */
+    #story { background: var(--color-surface); }
+    .story-frame {
+      position: relative; padding-top: 56.25%; border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); background: var(--color-card);
+    }
+    .story-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    /* ─── Handy tools ─────────────────────────────────────────────────── */
+    .tools-intro { text-align: center; margin: 3rem 0 1.5rem; }
+    .tool-form { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .tool-input, .tool-textarea {
+      flex: 1 1 180px; padding: .55rem .7rem; border-radius: 8px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text-primary); font-family: inherit; font-size: .85rem;
+    }
+    .tool-textarea { min-height: 120px; resize: vertical; }
+    .tool-btn {
+      padding: .5rem 1rem; border-radius: 8px; border: 1px solid var(--color-primary);
+      background: rgba(215,136,29,.12); color: var(--color-primary); font-weight: 600; cursor: pointer;
+      font-size: .85rem; transition: all .2s;
+    }
+    .tool-btn:hover { background: rgba(215,136,29,.2); }
+    .tool-result {
+      border: 1px solid var(--color-border); background: var(--color-surface); border-radius: 10px;
+      padding: .75rem; font-size: .78rem; color: var(--color-text-secondary); white-space: pre-wrap;
+      word-break: break-word; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      min-height: 64px;
+    }
+    .tool-meta { font-size: .75rem; color: var(--color-accent); }
+    .minigun-stream {
+      position: relative; height: 72px; border-radius: 10px; background: rgba(215,136,29,.08); overflow: hidden;
+      border: 1px dashed rgba(215,136,29,.4);
+    }
+    .minigun-bullet { position: absolute; left: -10%; animation: minigun-burst .9s linear forwards; font-size: 1rem; opacity: .9; }
+    @keyframes minigun-burst { to { transform: translateX(140%); opacity: 0; } }
+
+    /* ─── Info widget ─────────────────────────────────────────────────── */
+    .info-fab {
+      position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 1200;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); color: #000;
+      border: none; border-radius: 999px; padding: .75rem 1.2rem; font-weight: 700;
+      box-shadow: var(--shadow-lg); cursor: pointer; opacity: 0; transform: translateY(12px);
+      pointer-events: none; transition: all var(--transition);
+    }
+    .info-fab.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .info-panel {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center;
+      justify-content: center; padding: 1.5rem; opacity: 0; pointer-events: none;
+      transition: opacity var(--transition); z-index: 1201;
+    }
+    .info-panel.open { opacity: 1; pointer-events: auto; }
+    .info-card {
+      background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius);
+      width: min(780px, 94vw); max-height: 85vh; overflow: auto; padding: 1.5rem; box-shadow: var(--shadow-lg);
+    }
+    .info-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .info-close {
+      border: 1px solid var(--color-border); background: var(--color-surface); border-radius: 8px;
+      padding: .4rem .65rem; cursor: pointer; color: var(--color-text-secondary);
+    }
+    .info-close:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .info-list { list-style: none; display: grid; gap: .75rem; margin-top: 1.25rem; }
+    .info-item {
+      display: flex; flex-wrap: wrap; gap: .35rem .75rem; justify-content: space-between;
+      border-bottom: 1px solid var(--color-border); padding-bottom: .5rem;
+    }
+    .info-key { font-weight: 600; color: var(--color-text-primary); }
+    .info-value { color: var(--color-text-secondary); text-align: right; flex: 1 1 200px; word-break: break-word; white-space: pre-wrap; }
+    body.info-open { overflow: hidden; }
+
     /* ─── Contact ──────────────────────────────────────────────────────── */
     #contact { text-align: center; }
     .contact-inner { max-width: 600px; margin: 0 auto; }
@@ -346,6 +416,7 @@
 
       <div class="nav-links" id="navLinks">
         <a href="#about">About</a>
+        <a href="#story">Our Story</a>
         <a href="#services">Services</a>
         <a href="#repos">Open Source</a>
         <a href="#widgets">Tools</a>
@@ -369,7 +440,7 @@
     <div class="hero-bg"></div>
     <div class="hero-inner">
       <img src="https://raw.githubusercontent.com/zoak-solutions/.github/refs/heads/master/assets/ZOAK_logo_square_2026.svg"
-           alt="ZOAK Solutions logo" class="hero-logo" width="160" height="270" />
+           alt="ZOAK Solutions logo" class="hero-logo" width="160" />
       <div class="hero-eyebrow">
         <span class="pill">Est. 2013 · Australia</span>
       </div>
@@ -463,6 +534,26 @@
           </ul>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ─── Our Story ──────────────────────────────────────────────────────── -->
+  <section id="story" class="section">
+    <div class="container">
+      <div class="section-title reveal">
+        <span class="pill">Our Story</span>
+        <h2>The ZOAK <span>Journey</span></h2>
+        <p style="margin-top:.75rem; max-width:560px; margin-left:auto; margin-right:auto;">
+          From boutique security engineering to trusted strategic partner — explore the milestones that shaped ZOAK Solutions.
+        </p>
+      </div>
+      <div class="story-frame reveal">
+        <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
+                title="ZOAK Solutions Our Story presentation" loading="lazy" allow="autoplay"></iframe>
+      </div>
+      <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
+        Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
+      </p>
     </div>
   </section>
 
@@ -688,6 +779,75 @@
         </div>
 
       </div>
+
+      <div class="tools-intro reveal">
+        <span class="pill">Handy Tools</span>
+        <h3>Client-side Utility Bench</h3>
+        <p style="margin-top:.6rem; max-width:520px; margin-left:auto; margin-right:auto; color:var(--color-text-secondary);">
+          Run lightweight, browser-based checks to inspect domains, headers, and performance without leaving the page.
+        </p>
+      </div>
+
+      <div class="widgets-grid tools-grid">
+        <div class="widget reveal">
+          <div class="widget-title">Whois · RDAP</div>
+          <div class="tool-form">
+            <input id="whoisInput" class="tool-input" type="text" placeholder="example.com" aria-label="Domain for whois lookup">
+            <button id="whoisBtn" class="tool-btn" type="button">Lookup</button>
+          </div>
+          <pre id="whoisResult" class="tool-result">Enter a domain to query RDAP records.</pre>
+          <div class="tool-meta">Powered by rdap.org.</div>
+        </div>
+
+        <div class="widget reveal reveal-delay-1">
+          <div class="widget-title">DNS Dumpr</div>
+          <div class="tool-form">
+            <input id="dnsInput" class="tool-input" type="text" placeholder="example.com" aria-label="Domain for DNS lookup">
+            <button id="dnsBtn" class="tool-btn" type="button">Resolve</button>
+          </div>
+          <pre id="dnsResult" class="tool-result">Resolve records via DNS-over-HTTPS.</pre>
+          <div class="tool-meta">Uses dns.google/resolve.</div>
+        </div>
+
+        <div class="widget reveal reveal-delay-2">
+          <div class="widget-title">Tracepath</div>
+          <div class="tool-form">
+            <button id="traceBtn" class="tool-btn" type="button">Run Trace</button>
+          </div>
+          <pre id="traceResult" class="tool-result">Run a quick network trace summary.</pre>
+          <div class="tool-meta">Queries Google DNS trace endpoints.</div>
+        </div>
+
+        <div class="widget reveal">
+          <div class="widget-title">Mailheader Parser</div>
+          <textarea id="mailInput" class="tool-textarea" placeholder="Paste raw email headers here"></textarea>
+          <div class="tool-form">
+            <button id="mailBtn" class="tool-btn" type="button">Parse Headers</button>
+          </div>
+          <pre id="mailResult" class="tool-result">Parsed headers will appear here.</pre>
+        </div>
+
+        <div class="widget reveal reveal-delay-1">
+          <div class="widget-title">Speedtestr</div>
+          <div class="tool-form">
+            <button id="speedBtn" class="tool-btn" type="button">Run Speed Test</button>
+          </div>
+          <pre id="speedResult" class="tool-result">Estimate download speed from this page.</pre>
+          <div class="tool-meta">Local-only fetch test.</div>
+        </div>
+
+        <div class="widget reveal reveal-delay-2">
+          <div class="widget-title">Minigun</div>
+          <p style="font-size:.85rem;color:var(--color-text-secondary);">
+            A tiny, harmless arcade burst to shake off stress.
+          </p>
+          <div class="tool-form">
+            <button id="minigunBtn" class="tool-btn" type="button">Arm Minigun</button>
+          </div>
+          <div id="minigunStream" class="minigun-stream" aria-hidden="true"></div>
+          <div class="tool-meta">Local animation only.</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -704,9 +864,9 @@
             ZOAK Solutions has the experience to deliver.
           </p>
           <div class="contact-links">
-            <a href="mailto:admin@zoak.solutions" class="contact-link">
+            <a href="mailto:contact@zoak.solutions" class="contact-link">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              admin@zoak.solutions
+              contact@zoak.solutions
             </a>
             <a href="https://zoak.solutions" target="_blank" rel="noopener" class="contact-link">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -746,16 +906,35 @@
       </div>
       <div class="footer-links">
         <a href="#about">About</a>
+        <a href="#story">Our Story</a>
         <a href="#services">Services</a>
         <a href="#repos">Open Source</a>
         <a href="https://zoak.solutions" target="_blank" rel="noopener">Website</a>
         <a href="https://osm.dev" target="_blank" rel="noopener">osm.dev</a>
         <a href="https://github.com/zoak-solutions" target="_blank" rel="noopener">GitHub</a>
-        <a href="mailto:admin@zoak.solutions">Contact</a>
+        <a href="mailto:contact@zoak.solutions">Contact</a>
       </div>
       <p class="footer-copy">© <span id="year"></span> ZOAK Pty Ltd · ABN 68 161 531 880 · All rights reserved.</p>
     </div>
   </footer>
+
+  <button id="infoFab" class="info-fab" type="button" aria-label="View your_info details">💁‍♂️your_info</button>
+  <div class="info-panel" id="infoPanel" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="info-card">
+      <div class="info-header">
+        <div>
+          <span class="pill">Your Info</span>
+          <h3 style="margin-top:.35rem;">What your browser shares</h3>
+        </div>
+        <button id="infoClose" class="info-close" type="button">Close</button>
+      </div>
+      <p style="margin-top:.75rem;color:var(--color-text-secondary);">
+        This snapshot highlights data automatically shared with a simple website, including device hints and public metadata.
+      </p>
+      <ul id="infoList" class="info-list"></ul>
+      <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
+    </div>
+  </div>
 
   <!-- ─── Inline SVG spinner style ─────────────────────────────────────── -->
   <style>
@@ -781,8 +960,7 @@
     };
 
     const saved = localStorage.getItem('zoak-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+    applyTheme(saved || 'dark');
 
     themeBtn.addEventListener('click', () => {
       applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
@@ -989,6 +1167,264 @@
       span.textContent = s;
       tsEl.appendChild(span);
     });
+
+    /* ── Handy tools ───────────────────────────────────────────────────── */
+    const formatJson = (data) => JSON.stringify(data, null, 2);
+    const cleanDomain = (value) => value.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+    const whoisInput = document.getElementById('whoisInput');
+    const whoisBtn = document.getElementById('whoisBtn');
+    const whoisResult = document.getElementById('whoisResult');
+    const summarizeRdap = (data, domain) => {
+      const registrar = data.entities?.find(e => (e.roles || []).includes('registrar'));
+      const registrarName = registrar?.vcardArray?.[1]?.find(item => item[0] === 'fn')?.[3];
+      const events = {};
+      (data.events || []).forEach(e => {
+        if (e.eventAction && e.eventDate) events[e.eventAction] = e.eventDate;
+      });
+      return {
+        domain: data.ldhName || domain,
+        status: data.status || [],
+        registrar: registrarName || 'Unknown',
+        nameservers: (data.nameservers || []).map(ns => ns.ldhName),
+        events,
+      };
+    };
+    const runWhois = async () => {
+      const domain = cleanDomain(whoisInput.value.trim());
+      if (!domain) { whoisResult.textContent = 'Enter a domain name first.'; return; }
+      whoisResult.textContent = 'Looking up RDAP records…';
+      try {
+        const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`);
+        if (!res.ok) throw new Error('Lookup failed');
+        const data = await res.json();
+        whoisResult.textContent = formatJson(summarizeRdap(data, domain));
+      } catch (err) {
+        whoisResult.textContent = 'RDAP lookup unavailable. Please try again later.';
+      }
+    };
+    whoisBtn.addEventListener('click', runWhois);
+
+    const dnsInput = document.getElementById('dnsInput');
+    const dnsBtn = document.getElementById('dnsBtn');
+    const dnsResult = document.getElementById('dnsResult');
+    const runDns = async () => {
+      const domain = cleanDomain(dnsInput.value.trim());
+      if (!domain) { dnsResult.textContent = 'Enter a domain name first.'; return; }
+      dnsResult.textContent = 'Resolving DNS…';
+      try {
+        const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=ANY`);
+        if (!res.ok) throw new Error('DNS lookup failed');
+        const data = await res.json();
+        const answers = (data.Answer || []).map(a => `${a.name} ${a.type} ${a.data}`);
+        const authority = (data.Authority || []).map(a => `${a.name} ${a.type} ${a.data}`);
+        const lines = [];
+        if (answers.length) { lines.push('Answer:'); lines.push(...answers); }
+        if (authority.length) { lines.push('', 'Authority:'); lines.push(...authority); }
+        dnsResult.textContent = lines.length ? lines.join('\n') : 'No records returned.';
+      } catch (err) {
+        dnsResult.textContent = 'DNS lookup unavailable. Please try again later.';
+      }
+    };
+    dnsBtn.addEventListener('click', runDns);
+
+    const traceBtn = document.getElementById('traceBtn');
+    const traceResult = document.getElementById('traceResult');
+    traceBtn.addEventListener('click', async () => {
+      traceResult.textContent = 'Tracing network edge…';
+      try {
+        const res = await fetch('https://trace.dns.google/trace');
+        if (!res.ok) throw new Error('Trace failed');
+        const text = await res.text();
+        traceResult.textContent = text.trim() || 'Trace complete, but no data returned.';
+      } catch (err) {
+        traceResult.textContent = 'Trace unavailable in this browser. Try again later.';
+      }
+    });
+
+    const mailInput = document.getElementById('mailInput');
+    const mailBtn = document.getElementById('mailBtn');
+    const mailResult = document.getElementById('mailResult');
+    const parseHeaders = (raw) => {
+      const lines = raw.split(/\r?\n/);
+      const unfolded = [];
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        if (/^\s/.test(line) && unfolded.length) {
+          unfolded[unfolded.length - 1] += ` ${line.trim()}`;
+        } else {
+          unfolded.push(line);
+        }
+      });
+      const headers = {};
+      unfolded.forEach(line => {
+        const idx = line.indexOf(':');
+        if (idx === -1) return;
+        const key = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+        headers[key] = headers[key] ? `${headers[key]}; ${value}` : value;
+      });
+      return headers;
+    };
+    mailBtn.addEventListener('click', () => {
+      const raw = mailInput.value.trim();
+      if (!raw) { mailResult.textContent = 'Paste raw headers to parse.'; return; }
+      const parsed = parseHeaders(raw);
+      mailResult.textContent = Object.keys(parsed).length ? formatJson(parsed) : 'No headers detected.';
+    });
+
+    const speedBtn = document.getElementById('speedBtn');
+    const speedResult = document.getElementById('speedResult');
+    speedBtn.addEventListener('click', async () => {
+      speedResult.textContent = 'Testing download speed…';
+      try {
+        const baseUrl = window.location.href.split('#')[0];
+        const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}speedtest=${Date.now()}`;
+        const start = performance.now();
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Fetch failed');
+        const buf = await res.arrayBuffer();
+        const elapsed = (performance.now() - start) / 1000;
+        const mbps = (buf.byteLength * 8) / (elapsed * 1e6);
+        const lines = [
+          `Downloaded ${Math.round(buf.byteLength / 1024)} KB in ${elapsed.toFixed(2)}s`,
+          `Estimated throughput: ${mbps.toFixed(2)} Mbps`,
+        ];
+        if (navigator.connection?.downlink) {
+          lines.push(`Navigator downlink: ${navigator.connection.downlink} Mbps`);
+        }
+        speedResult.textContent = lines.join('\n');
+      } catch (err) {
+        speedResult.textContent = 'Speed test unavailable. Please try again later.';
+      }
+    });
+
+    const minigunBtn = document.getElementById('minigunBtn');
+    const minigunStream = document.getElementById('minigunStream');
+    const fireMinigun = () => {
+      const burst = 18;
+      for (let i = 0; i < burst; i += 1) {
+        const bullet = document.createElement('span');
+        bullet.className = 'minigun-bullet';
+        bullet.textContent = i % 3 === 0 ? '💥' : '⚡';
+        bullet.style.top = `${Math.random() * 52 + 8}px`;
+        bullet.style.animationDelay = `${i * 0.04}s`;
+        minigunStream.appendChild(bullet);
+        bullet.addEventListener('animationend', () => bullet.remove());
+      }
+    };
+    minigunBtn.addEventListener('click', fireMinigun);
+
+    /* ── your_info widget ─────────────────────────────────────────────── */
+    const infoFab = document.getElementById('infoFab');
+    const infoPanel = document.getElementById('infoPanel');
+    const infoClose = document.getElementById('infoClose');
+    const infoList = document.getElementById('infoList');
+    const infoStatus = document.getElementById('infoStatus');
+
+    const formatValue = (value) => {
+      if (Array.isArray(value)) return value.join(', ');
+      if (value === undefined || value === null || value === '') return 'Unavailable';
+      if (typeof value === 'object') return formatJson(value);
+      return String(value);
+    };
+    const addInfoItem = (label, value) => {
+      const li = document.createElement('li');
+      li.className = 'info-item';
+      li.innerHTML = `<span class="info-key">${label}</span><span class="info-value">${formatValue(value)}</span>`;
+      infoList.appendChild(li);
+    };
+
+    const collectInfo = async () => {
+      const info = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        languages: navigator.languages,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        screen: `${window.screen.width} × ${window.screen.height}`,
+        colorDepth: `${window.screen.colorDepth}-bit`,
+        deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : undefined,
+        hardwareConcurrency: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : undefined,
+        touchPoints: navigator.maxTouchPoints,
+        cookiesEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack,
+        referrer: document.referrer || 'Direct / none',
+      };
+
+      const enrichers = [];
+      if (navigator.userAgentData?.getHighEntropyValues) {
+        enrichers.push(
+          navigator.userAgentData.getHighEntropyValues(['architecture', 'model', 'platformVersion', 'uaFullVersion'])
+            .then(data => { info.uaHints = data; })
+            .catch(() => undefined)
+        );
+      }
+
+      enrichers.push(
+        fetch('https://ipapi.co/json/')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (!data) return;
+            info.publicIp = data.ip;
+            info.network = data.org;
+            info.city = data.city;
+            info.region = data.region;
+            info.country = data.country_name;
+          })
+          .catch(() => undefined)
+      );
+
+      if (navigator.connection) {
+        info.connection = {
+          downlink: navigator.connection.downlink,
+          effectiveType: navigator.connection.effectiveType,
+          rtt: navigator.connection.rtt,
+          saveData: navigator.connection.saveData,
+        };
+      }
+
+      await Promise.allSettled(enrichers);
+      infoList.innerHTML = '';
+      addInfoItem('User agent', info.userAgent);
+      addInfoItem('Platform', info.platform);
+      addInfoItem('Languages', info.languages);
+      addInfoItem('Time zone', info.timezone);
+      addInfoItem('Screen', `${info.screen} · ${info.colorDepth}`);
+      addInfoItem('CPU / Memory', `${info.hardwareConcurrency || 'Unknown'} · ${info.deviceMemory || 'Unknown'}`);
+      addInfoItem('Touch points', info.touchPoints);
+      addInfoItem('Cookies enabled', info.cookiesEnabled);
+      addInfoItem('Do Not Track', info.doNotTrack);
+      addInfoItem('Referrer', info.referrer);
+      if (info.connection) addInfoItem('Network hints', info.connection);
+      if (info.uaHints) addInfoItem('User-Agent hints', info.uaHints);
+      if (info.publicIp) {
+        addInfoItem('Public IP', info.publicIp);
+        addInfoItem('Network / ASN', info.network);
+        addInfoItem('Approx. location', `${info.city || ''} ${info.region || ''} ${info.country || ''}`.trim());
+      }
+      infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString('en-AU')}.`;
+      infoFab.classList.add('visible');
+    };
+
+    const openInfoPanel = () => {
+      infoPanel.classList.add('open');
+      infoPanel.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('info-open');
+    };
+    const closeInfoPanel = () => {
+      infoPanel.classList.remove('open');
+      infoPanel.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('info-open');
+    };
+    infoFab.addEventListener('click', openInfoPanel);
+    infoClose.addEventListener('click', closeInfoPanel);
+    infoPanel.addEventListener('click', (e) => {
+      if (e.target === infoPanel) closeInfoPanel();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && infoPanel.classList.contains('open')) closeInfoPanel();
+    });
+    collectInfo();
 
     /* ── Footer year ───────────────────────────────────────────────────── */
     document.getElementById('year').textContent = new Date().getFullYear();
