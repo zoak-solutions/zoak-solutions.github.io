@@ -158,7 +158,7 @@
     @keyframes pulse-bg { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .6; } }
 
     .hero-inner { position: relative; z-index: 1; max-width: 760px; }
-    .hero-logo { width: min(160px, 28vw); height: auto; aspect-ratio: 639 / 1077; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
+    .hero-logo { width: min(160px, 28vw); height: auto; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
     .hero-eyebrow { animation: fadeInUp .8s .1s ease both; }
     .hero-title { animation: fadeInUp .8s .2s ease both; margin: .75rem 0 1.25rem; }
     .hero-subtitle {
@@ -1463,13 +1463,15 @@
       ipEnrichBtn.disabled = true;
       const originalLabel = ipEnrichBtn.textContent;
       ipEnrichBtn.textContent = 'Fetching…';
+      ipEnrichBtn.setAttribute('aria-busy', 'true');
+      ipEnrichBtn.setAttribute('aria-disabled', 'true');
       infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
       try {
         const res = await fetchWithTimeout('https://ipapi.co/json/');
         if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
         const data = await res.json();
         if (!data || typeof data !== 'object' || !data.ip) {
-          throw new Error('IP lookup failed (no data)');
+          throw new Error('IP lookup failed (missing IP field)');
         }
         Object.assign(infoData, {
           publicIp: data.ip,
@@ -1488,6 +1490,8 @@
         }
         ipEnrichBtn.disabled = false;
         ipEnrichBtn.textContent = originalLabel;
+        ipEnrichBtn.removeAttribute('aria-busy');
+        ipEnrichBtn.removeAttribute('aria-disabled');
       }
     };
 
