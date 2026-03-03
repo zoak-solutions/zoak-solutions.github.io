@@ -108,8 +108,13 @@
     .nav-inner {
       display: flex; align-items: center; justify-content: space-between; gap: 1rem;
     }
-    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
-    .nav-logo svg { width: 32px; height: auto; }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; line-height: 1; }
+    .nav-logo-mark {
+      display: flex; align-items: center; justify-content: center;
+      padding: .2rem; border-radius: 10px; border: 1px solid rgba(215,136,29,.28);
+      background: rgba(215,136,29,.08);
+    }
+    .nav-logo-mark svg { width: 30px; height: auto; display: block; }
     .nav-logo-text { font-size: 1.1rem; font-weight: 700; color: var(--color-text-primary); letter-spacing: -.01em; }
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
     .nav-links a { font-size: .9rem; font-weight: 500; color: var(--color-text-secondary); transition: color .2s; }
@@ -293,10 +298,21 @@
     /* ─── Our Story ───────────────────────────────────────────────────── */
     #story { background: var(--color-surface); }
     .story-frame {
-      position: relative; padding-top: 56.25%; border-radius: var(--radius); overflow: hidden;
-      border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); background: var(--color-card);
+      position: relative; padding: 4px; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(215,136,29,.55), rgba(249,220,6,.45), rgba(91,192,235,.35));
+      background-size: 200% 200%; animation: story-glow 10s ease infinite; box-shadow: var(--shadow-lg);
     }
-    .story-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .story-frame-inner {
+      position: relative; border-radius: calc(var(--radius) - 4px); overflow: hidden;
+      background: var(--color-card); border: 1px solid rgba(255,255,255,.06);
+      aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
+    }
+    .story-frame img { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--color-card); }
+    @keyframes story-glow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
     /* ─── Handy tools ─────────────────────────────────────────────────── */
     .tools-intro { text-align: center; margin: 3rem 0 1.5rem; }
@@ -319,12 +335,17 @@
       min-height: 64px;
     }
     .tool-meta { font-size: .75rem; color: var(--color-accent); }
-    .minigun-stream {
-      position: relative; height: 72px; border-radius: 10px; background: rgba(215,136,29,.08); overflow: hidden;
-      border: 1px dashed rgba(215,136,29,.4);
+    .aim-trainer-area {
+      position: relative; height: 140px; border-radius: 12px;
+      background: radial-gradient(circle at top left, rgba(215,136,29,.18), rgba(26,26,26,.25));
+      border: 1px solid rgba(215,136,29,.35); overflow: hidden;
     }
-    .minigun-bullet { position: absolute; left: -10%; animation: minigun-burst .9s linear forwards; font-size: 1rem; opacity: .9; }
-    @keyframes minigun-burst { to { transform: translateX(140%); opacity: 0; } }
+    .aim-trainer-target {
+      position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,.9);
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      box-shadow: 0 6px 16px rgba(215,136,29,.4); cursor: crosshair;
+    }
+    .aim-trainer-meta { font-size: .75rem; color: var(--color-accent); margin-top: .5rem; }
 
     /* ─── Info widget ─────────────────────────────────────────────────── */
     .info-fab {
@@ -412,15 +433,17 @@
   <nav id="nav">
     <div class="container nav-inner">
       <a href="#hero" class="nav-logo" aria-label="ZOAK Solutions home">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.2 1077" width="32" aria-hidden="true">
-          <style>.nv-a{fill:#fedc00}.nv-b{fill:#f08525}.nv-c{fill:#77868d}.nv-d{fill:#f18b20}</style>
-          <path class="nv-a" d="M601.8 154.9c8 4.4 11.1 14.8 6 23l-1 1.6c-.2.3-1.2-.6-1.3-.7-2.7-3.6-6.4-6.5-11-8.5L556.7 154 273.9 33.4c-2.3-1-6.3-1.5-7.7-.1-2.1 2.1-3.2 5.7-3.2 9l.03 183.5c0 6.1 2.8 11.4 7.4 14.7 3.9 2.9 7.9 5.8 12.5 7.8l74.6 32.1 1.7 1.1-1.7.8 19.5 8.5c1.3.5 3.7.6 4.9.7l181.5 78.3 47.9 21.9c4.8 2.2 9.1 5.7 11.8 10.1 8.5 14.1 3.6 32-10.5 40.3-4.9 2.9-9.6 4.8-15.1 6.9L358.5 537.5c-1 0-4 .5-5.2 0l-29.5-11.5 1.6-2.1 264.5-98.9c4.3-1.6 13.7-4.6 10.6-10.1l-43.9-20.1-212.3-92.4c-.7-1-2-2-3.3-2.6l-15.9-6.9c-2.4-1.1-4.7-1.7-7.1-1.7l-38.5-16.3c-15.2-6.4-33.7-16.6-39.1-33-1.8-5.5-3.3-11.1-3.3-17.1l0-182.8c0-5.5 1.6-10.7 3.4-15.5 3.3-9 10.5-14.9 19.4-17.7 4.3-1.3 8.6-2.1 12.9-.9 4.8 1.4 9 2.6 13.8 4.8L593 150.3c3.4 1.6 6 3.1 8.8 4.6z"/>
-          <path class="nv-d" d="M320.6 294.6c2.3.3 4.6 1.1 7 2.1l12.5 5.5-1.3 1.4-297.8 111.9c-9.3 3.5-14.8 12.2-14.8 21.8l0 185.4c0 4.2 1.5 8.8 4.8 11.4l396.7 161.8c5.4 2.2 12.2 2.3 16-2 3.9-4.6 6.8-11.3 6.8-18l.08-164.9c0-14.6-14.3-23.3-26.2-27.9l-91.5-35.5c-.4-.3-1.1-1-1.6-1.2l1.2 0c.3 0 .3-1 0-1.1l-1.3-.4-30.9-12.2c-.5-.2-1.9.1-2.1.5l-234.7-91.8c-4.4-1.7-6.4-6-4.9-10 1.3-3.6 5.5-6.4 9.9-4.7l250.6 98.4c.9.4 1.9.4 2.5.2l.7 1.1-2.4.5 33.7 13.3c1.1.4 2.5.3 3.2-.3l75.6 29.5c5.8 2.3 10.9 5.4 15.9 8.9 11.2 7.8 17.8 19.7 17.8 33.7l0 161c0 8.5-2.2 16.4-5.7 23.7-5.4 11.2-19.4 19.1-30.9 15.6-5.1-1.6-9.6-3.1-14.7-5.2L23.4 647.5c-7.8-3.2-12.6-15.4-12.6-23.2l-.06-187.7c0-15 8.7-27.3 21.4-34 4.7-2.5 9-3.8 14.1-5.7L320.6 294.6z"/>
-          <path class="nv-c" d="M302 933.8c-12.9 34-49 48.6-82.9 39.8-21.4-5.5-38-21-45.2-41.9-5.2-15.2-6-31.7-2.2-47.4 5.8-24 23.5-42 47.4-48.3 36-9.4 74.2 8 85 44.9 5 17.2 4.3 36-.07 52.8zm-12.1-27c.4-10-1.1-19.7-5.1-28.9-6.3-14.5-18.6-25-34.1-28.4-23.6-5.3-47.4 4.3-58.1 26.5-8 16.5-7.8 37.7-1 54.5 7.7 19.1 25.6 30.6 46 30.7 31.5.2 51-24 52.2-54.4z"/>
-          <path class="nv-c" d="M603.1 973.7l-19.2 0-41.5-73.5-30.2 34.5 0 38.9-16.9 0 0-137.9 16.9 0 .05 76.7 66.6-76.7 19.6.1-44.8 51.5 48.9 83.9 1.1 1.9c.3-.2-.3.4-.5.4z"/>
-          <path class="nv-c" d="M140.3 973.7l-106.1 0 0-14.1 82.4-108.4-82.1 0 0-15.4 103.7 0 0 14-81.9 108.4 84.1 0 0 15.5z"/>
-          <path class="nv-c" d="M426.4 939.9l-63 0-12.2 33.8-18.5 0 52.2-137.8 20.2 0 52 137.8-18.3.06-12.4-33.8zm-5.1-13.9l-26.6-73.1-26.4 73.2 53 0z"/>
-        </svg>
+        <span class="nav-logo-mark" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.2 1077" width="32">
+            <style>.nv-a{fill:#fedc00}.nv-b{fill:#f08525}.nv-c{fill:#77868d}.nv-d{fill:#f18b20}</style>
+            <path class="nv-a" d="M601.8 154.9c8 4.4 11.1 14.8 6 23l-1 1.6c-.2.3-1.2-.6-1.3-.7-2.7-3.6-6.4-6.5-11-8.5L556.7 154 273.9 33.4c-2.3-1-6.3-1.5-7.7-.1-2.1 2.1-3.2 5.7-3.2 9l.03 183.5c0 6.1 2.8 11.4 7.4 14.7 3.9 2.9 7.9 5.8 12.5 7.8l74.6 32.1 1.7 1.1-1.7.8 19.5 8.5c1.3.5 3.7.6 4.9.7l181.5 78.3 47.9 21.9c4.8 2.2 9.1 5.7 11.8 10.1 8.5 14.1 3.6 32-10.5 40.3-4.9 2.9-9.6 4.8-15.1 6.9L358.5 537.5c-1 0-4 .5-5.2 0l-29.5-11.5 1.6-2.1 264.5-98.9c4.3-1.6 13.7-4.6 10.6-10.1l-43.9-20.1-212.3-92.4c-.7-1-2-2-3.3-2.6l-15.9-6.9c-2.4-1.1-4.7-1.7-7.1-1.7l-38.5-16.3c-15.2-6.4-33.7-16.6-39.1-33-1.8-5.5-3.3-11.1-3.3-17.1l0-182.8c0-5.5 1.6-10.7 3.4-15.5 3.3-9 10.5-14.9 19.4-17.7 4.3-1.3 8.6-2.1 12.9-.9 4.8 1.4 9 2.6 13.8 4.8L593 150.3c3.4 1.6 6 3.1 8.8 4.6z"/>
+            <path class="nv-d" d="M320.6 294.6c2.3.3 4.6 1.1 7 2.1l12.5 5.5-1.3 1.4-297.8 111.9c-9.3 3.5-14.8 12.2-14.8 21.8l0 185.4c0 4.2 1.5 8.8 4.8 11.4l396.7 161.8c5.4 2.2 12.2 2.3 16-2 3.9-4.6 6.8-11.3 6.8-18l.08-164.9c0-14.6-14.3-23.3-26.2-27.9l-91.5-35.5c-.4-.3-1.1-1-1.6-1.2l1.2 0c.3 0 .3-1 0-1.1l-1.3-.4-30.9-12.2c-.5-.2-1.9.1-2.1.5l-234.7-91.8c-4.4-1.7-6.4-6-4.9-10 1.3-3.6 5.5-6.4 9.9-4.7l250.6 98.4c.9.4 1.9.4 2.5.2l.7 1.1-2.4.5 33.7 13.3c1.1.4 2.5.3 3.2-.3l75.6 29.5c5.8 2.3 10.9 5.4 15.9 8.9 11.2 7.8 17.8 19.7 17.8 33.7l0 161c0 8.5-2.2 16.4-5.7 23.7-5.4 11.2-19.4 19.1-30.9 15.6-5.1-1.6-9.6-3.1-14.7-5.2L23.4 647.5c-7.8-3.2-12.6-15.4-12.6-23.2l-.06-187.7c0-15 8.7-27.3 21.4-34 4.7-2.5 9-3.8 14.1-5.7L320.6 294.6z"/>
+            <path class="nv-c" d="M302 933.8c-12.9 34-49 48.6-82.9 39.8-21.4-5.5-38-21-45.2-41.9-5.2-15.2-6-31.7-2.2-47.4 5.8-24 23.5-42 47.4-48.3 36-9.4 74.2 8 85 44.9 5 17.2 4.3 36-.07 52.8zm-12.1-27c.4-10-1.1-19.7-5.1-28.9-6.3-14.5-18.6-25-34.1-28.4-23.6-5.3-47.4 4.3-58.1 26.5-8 16.5-7.8 37.7-1 54.5 7.7 19.1 25.6 30.6 46 30.7 31.5.2 51-24 52.2-54.4z"/>
+            <path class="nv-c" d="M603.1 973.7l-19.2 0-41.5-73.5-30.2 34.5 0 38.9-16.9 0 0-137.9 16.9 0 .05 76.7 66.6-76.7 19.6.1-44.8 51.5 48.9 83.9 1.1 1.9c.3-.2-.3.4-.5.4z"/>
+            <path class="nv-c" d="M140.3 973.7l-106.1 0 0-14.1 82.4-108.4-82.1 0 0-15.4 103.7 0 0 14-81.9 108.4 84.1 0 0 15.5z"/>
+            <path class="nv-c" d="M426.4 939.9l-63 0-12.2 33.8-18.5 0 52.2-137.8 20.2 0 52 137.8-18.3.06-12.4-33.8zm-5.1-13.9l-26.6-73.1-26.4 73.2 53 0z"/>
+          </svg>
+        </span>
         <span class="nav-logo-text">ZOAK Solutions</span>
       </a>
 
@@ -491,7 +514,7 @@
           <div class="stat-label">Core Frameworks</div>
         </div>
         <div class="reveal reveal-delay-3">
-          <div class="stat-num" data-target="99" data-suffix="%">0</div>
+          <div class="stat-num" data-target="99.999" data-suffix="%">0</div>
           <div class="stat-label">% Uptime SLA</div>
         </div>
       </div>
@@ -558,12 +581,13 @@
         </p>
       </div>
       <div class="story-frame reveal">
-        <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
-                title="ZOAK Solutions Our Story presentation" loading="lazy"
-                sandbox="allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
+        <div class="story-frame-inner">
+          <img src="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png"
+               alt="ZOAK Solutions timeline" loading="lazy" />
+        </div>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
-        Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
+        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener">Open the timeline →</a>
       </p>
     </div>
   </section>
@@ -848,15 +872,16 @@
         </div>
 
         <div class="widget reveal reveal-delay-2">
-          <div class="widget-title">Minigun</div>
+          <div class="widget-title">Aim Trainer</div>
           <p style="font-size:.85rem;color:var(--color-text-secondary);">
-            A tiny, harmless arcade burst to shake off stress.
+            Tap each target before it vanishes — every hit speeds things up.
           </p>
           <div class="tool-form">
-            <button id="minigunBtn" class="tool-btn" type="button">Arm Minigun</button>
+            <button id="aimTrainerBtn" class="tool-btn" type="button">Start Aim Trainer</button>
           </div>
-          <div id="minigunStream" class="minigun-stream" aria-hidden="true"></div>
-          <div class="tool-meta">Local animation only.</div>
+          <div id="aimTrainerArea" class="aim-trainer-area" aria-live="polite"></div>
+          <div class="aim-trainer-meta" id="aimTrainerScore">Score: 0 · Level 1 · Best 0</div>
+          <div class="tool-meta" id="aimTrainerStatus">Click start to begin.</div>
         </div>
       </div>
     </div>
@@ -1045,20 +1070,22 @@
     const countUp = (el, target, suffix = '') => {
       let start = 0;
       const dur = 1600;
+      const decimals = Number.isInteger(target) ? 0 : (String(target).split('.')[1] || '').length;
+      const formatValue = (value) => decimals ? value.toFixed(decimals) : Math.round(value).toString();
       const step = (timestamp) => {
         if (!step.start) step.start = timestamp;
         const progress = Math.min((timestamp - step.start) / dur, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        el.textContent = Math.floor(eased * target) + suffix;
+        el.textContent = `${formatValue(eased * target)}${suffix}`;
         if (progress < 1) requestAnimationFrame(step);
-        else el.textContent = target + suffix;
+        else el.textContent = `${formatValue(target)}${suffix}`;
       };
       requestAnimationFrame(step);
     };
     const statsObs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          const t = parseInt(e.target.dataset.target, 10);
+          const t = parseFloat(e.target.dataset.target);
           const s = e.target.dataset.suffix || '+';
           countUp(e.target, t, s);
           statsObs.unobserve(e.target);
@@ -1404,25 +1431,91 @@
       }
     });
 
-    const minigunBtn = document.getElementById('minigunBtn');
-    const minigunStream = document.getElementById('minigunStream');
-    const fireMinigun = () => {
-      const burstCount = 18;
-      const verticalRange = 52;
-      const verticalOffset = 8;
-      const delayStep = 0.04;
-      for (let i = 0; i < burstCount; i += 1) {
-        const bullet = document.createElement('span');
-        bullet.className = 'minigun-bullet';
-        bullet.setAttribute('aria-hidden', 'true');
-        bullet.textContent = i % 3 === 0 ? '💥' : '⚡';
-        bullet.style.top = `${Math.random() * verticalRange + verticalOffset}px`;
-        bullet.style.animationDelay = `${i * delayStep}s`;
-        minigunStream.appendChild(bullet);
-        bullet.addEventListener('animationend', () => bullet.remove());
+    const aimTrainerBtn = document.getElementById('aimTrainerBtn');
+    const aimTrainerArea = document.getElementById('aimTrainerArea');
+    const aimTrainerScore = document.getElementById('aimTrainerScore');
+    const aimTrainerStatus = document.getElementById('aimTrainerStatus');
+    let aimTrainerActive = false;
+    let aimTrainerScoreVal = 0;
+    let aimTrainerLevel = 1;
+    let aimTrainerBest = 0;
+    let aimTrainerSpeed = 1300;
+    let aimTrainerSize = 52;
+    let aimTrainerTimeout = null;
+    let aimTrainerTarget = null;
+
+    const updateAimTrainerMeta = () => {
+      aimTrainerScore.textContent = `Score: ${aimTrainerScoreVal} · Level ${aimTrainerLevel} · Best ${aimTrainerBest}`;
+    };
+    const clearAimTrainerTarget = () => {
+      if (aimTrainerTimeout) {
+        clearTimeout(aimTrainerTimeout);
+        aimTrainerTimeout = null;
+      }
+      if (aimTrainerTarget) {
+        aimTrainerTarget.remove();
+        aimTrainerTarget = null;
       }
     };
-    minigunBtn.addEventListener('click', fireMinigun);
+    const endAimTrainer = (message) => {
+      aimTrainerActive = false;
+      aimTrainerBest = Math.max(aimTrainerBest, aimTrainerScoreVal);
+      clearAimTrainerTarget();
+      updateAimTrainerMeta();
+      aimTrainerStatus.textContent = message;
+      aimTrainerBtn.textContent = 'Start Aim Trainer';
+    };
+    const spawnAimTarget = () => {
+      if (!aimTrainerActive) return;
+      clearAimTrainerTarget();
+      const target = document.createElement('button');
+      target.type = 'button';
+      target.className = 'aim-trainer-target';
+      target.setAttribute('aria-label', 'Aim target');
+      const padding = 8;
+      const areaWidth = aimTrainerArea.clientWidth || 1;
+      const areaHeight = aimTrainerArea.clientHeight || 1;
+      const size = aimTrainerSize;
+      const rangeX = Math.max(0, areaWidth - size - padding * 2);
+      const rangeY = Math.max(0, areaHeight - size - padding * 2);
+      target.style.width = `${size}px`;
+      target.style.height = `${size}px`;
+      target.style.left = `${padding + Math.random() * rangeX}px`;
+      target.style.top = `${padding + Math.random() * rangeY}px`;
+      target.addEventListener('click', () => {
+        if (!aimTrainerActive) return;
+        aimTrainerScoreVal += 1;
+        aimTrainerLevel = 1 + Math.floor(aimTrainerScoreVal / 5);
+        aimTrainerSpeed = Math.max(450, aimTrainerSpeed - 60);
+        aimTrainerSize = Math.max(24, aimTrainerSize - 2);
+        updateAimTrainerMeta();
+        aimTrainerStatus.textContent = 'Nice! Next target incoming.';
+        spawnAimTarget();
+      });
+      aimTrainerArea.appendChild(target);
+      aimTrainerTarget = target;
+      aimTrainerTimeout = setTimeout(() => {
+        endAimTrainer(`Missed! Final score ${aimTrainerScoreVal}.`);
+      }, aimTrainerSpeed);
+    };
+    const startAimTrainer = () => {
+      aimTrainerActive = true;
+      aimTrainerScoreVal = 0;
+      aimTrainerLevel = 1;
+      aimTrainerSpeed = 1300;
+      aimTrainerSize = 52;
+      aimTrainerBtn.textContent = 'Stop Aim Trainer';
+      aimTrainerStatus.textContent = 'Go! Hit the targets before they disappear.';
+      updateAimTrainerMeta();
+      spawnAimTarget();
+    };
+    aimTrainerBtn.addEventListener('click', () => {
+      if (!aimTrainerActive) {
+        startAimTrainer();
+      } else {
+        endAimTrainer('Session stopped. Click start to play again.');
+      }
+    });
 
     /* ── your_info widget ─────────────────────────────────────────────── */
     const infoFab = document.getElementById('infoFab');
