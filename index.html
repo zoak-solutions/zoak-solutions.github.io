@@ -158,7 +158,7 @@
     @keyframes pulse-bg { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .6; } }
 
     .hero-inner { position: relative; z-index: 1; max-width: 760px; }
-    .hero-logo { width: min(160px, 28vw); height: auto; max-height: 220px; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
+    .hero-logo { width: min(160px, 28vw); height: auto; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
     .hero-eyebrow { animation: fadeInUp .8s .1s ease both; }
     .hero-title { animation: fadeInUp .8s .2s ease both; margin: .75rem 0 1.25rem; }
     .hero-subtitle {
@@ -550,7 +550,7 @@
       <div class="story-frame reveal">
         <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
                 title="ZOAK Solutions Our Story presentation" loading="lazy"
-                sandbox="allow-same-origin allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
+                sandbox="allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
         Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
@@ -931,7 +931,7 @@
       </div>
       <p style="margin-top:.75rem;color:var(--color-text-secondary);">
         This snapshot highlights data automatically shared with a simple website, including device hints and public metadata.
-        Public IP enrichment uses ipapi.co.
+        Public IP enrichment uses ipapi.co (which may log request metadata).
       </p>
       <ul id="infoList" class="info-list"></ul>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
@@ -1177,9 +1177,14 @@
     const whoisInput = document.getElementById('whoisInput');
     const whoisBtn = document.getElementById('whoisBtn');
     const whoisResult = document.getElementById('whoisResult');
+    const getVcardName = (entity) => {
+      const card = entity?.vcardArray?.[1];
+      const nameField = Array.isArray(card) ? card.find(item => item[0] === 'fn') : null;
+      return Array.isArray(nameField) ? nameField[3] : null;
+    };
     const summarizeRdap = (data, domain) => {
       const registrar = data.entities?.find(e => (e.roles || []).includes('registrar'));
-      const registrarName = registrar?.vcardArray?.[1]?.find(item => item[0] === 'fn')?.[3];
+      const registrarName = getVcardName(registrar);
       const events = {};
       (data.events || []).forEach(e => {
         if (e.eventAction && e.eventDate) events[e.eventAction] = e.eventDate;
@@ -1202,7 +1207,7 @@
         const data = await res.json();
         whoisResult.textContent = formatJson(summarizeRdap(data, domain));
       } catch (err) {
-        whoisResult.textContent = err?.message || 'RDAP lookup unavailable. Please try again later.';
+        whoisResult.textContent = err?.message || 'RDAP lookup unavailable. Check the domain format or try again later.';
       }
     };
     whoisBtn.addEventListener('click', runWhois);
@@ -1312,13 +1317,16 @@
     const minigunBtn = document.getElementById('minigunBtn');
     const minigunStream = document.getElementById('minigunStream');
     const fireMinigun = () => {
-      const burst = 18;
-      for (let i = 0; i < burst; i += 1) {
+      const burstCount = 18;
+      const verticalRange = 52;
+      const verticalOffset = 8;
+      const delayStep = 0.04;
+      for (let i = 0; i < burstCount; i += 1) {
         const bullet = document.createElement('span');
         bullet.className = 'minigun-bullet';
         bullet.textContent = i % 3 === 0 ? '💥' : '⚡';
-        bullet.style.top = `${Math.random() * 52 + 8}px`;
-        bullet.style.animationDelay = `${i * 0.04}s`;
+        bullet.style.top = `${Math.random() * verticalRange + verticalOffset}px`;
+        bullet.style.animationDelay = `${i * delayStep}s`;
         minigunStream.appendChild(bullet);
         bullet.addEventListener('animationend', () => bullet.remove());
       }
@@ -1371,7 +1379,7 @@
       const enrichers = [];
       if (navigator.userAgentData?.getHighEntropyValues) {
         enrichers.push(
-          navigator.userAgentData.getHighEntropyValues(['architecture', 'model', 'platformVersion', 'uaFullVersion'])
+          navigator.userAgentData.getHighEntropyValues(['architecture', 'model', 'platformVersion', 'fullVersionList'])
             .then(data => { info.uaHints = data; })
             .catch(() => undefined)
         );
@@ -1381,7 +1389,7 @@
         fetch('https://ipapi.co/json/')
           .then(r => r.ok ? r.json() : null)
           .then(data => {
-            if (!data) return;
+            if (!data || typeof data !== 'object' || !data.ip) return;
             info.publicIp = data.ip;
             info.network = data.org;
             info.city = data.city;
