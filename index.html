@@ -158,7 +158,7 @@
     @keyframes pulse-bg { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .6; } }
 
     .hero-inner { position: relative; z-index: 1; max-width: 760px; }
-    .hero-logo { width: min(160px, 28vw); height: auto; aspect-ratio: 1 / 1; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
+    .hero-logo { width: min(160px, 28vw); height: auto; aspect-ratio: 639 / 1077; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
     .hero-eyebrow { animation: fadeInUp .8s .1s ease both; }
     .hero-title { animation: fadeInUp .8s .2s ease both; margin: .75rem 0 1.25rem; }
     .hero-subtitle {
@@ -937,6 +937,10 @@
         Public IP enrichment uses ipapi.co (which may log request metadata).
       </p>
       <ul id="infoList" class="info-list"></ul>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.75rem;">
+        <button id="ipEnrichBtn" class="tool-btn" type="button">Fetch public IP</button>
+        <span class="tool-meta">Uses ipapi.co (may log request metadata).</span>
+      </div>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
     </div>
   </div>
@@ -1174,7 +1178,13 @@
     });
 
     /* ── Handy tools ───────────────────────────────────────────────────── */
-    const formatJson = (data) => JSON.stringify(data, null, 2);
+    const formatJson = (data) => {
+      try {
+        return JSON.stringify(data, null, 2);
+      } catch (err) {
+        return String(data);
+      }
+    };
     const cleanDomain = (value) => value.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
     const whoisInput = document.getElementById('whoisInput');
@@ -1241,7 +1251,7 @@
         });
         dnsResult.textContent = lines.length ? lines.join('\n') : 'No records returned.';
       } catch (err) {
-        dnsResult.textContent = 'DNS lookup unavailable. Please try again later.';
+        dnsResult.textContent = err?.message || 'DNS lookup unavailable. Please try again later.';
       }
     };
     dnsBtn.addEventListener('click', runDns);
@@ -1256,7 +1266,7 @@
         const text = await res.text();
         traceResult.textContent = text.trim() || 'Trace complete, but no data returned.';
       } catch (err) {
-        traceResult.textContent = 'Trace unavailable in this browser. Try again later.';
+        traceResult.textContent = err?.message || 'Trace unavailable in this browser. Try again later.';
       }
     });
 
@@ -1327,6 +1337,7 @@
       for (let i = 0; i < burstCount; i += 1) {
         const bullet = document.createElement('span');
         bullet.className = 'minigun-bullet';
+        bullet.setAttribute('aria-hidden', 'true');
         bullet.textContent = i % 3 === 0 ? '💥' : '⚡';
         bullet.style.top = `${Math.random() * verticalRange + verticalOffset}px`;
         bullet.style.animationDelay = `${i * delayStep}s`;
@@ -1342,6 +1353,8 @@
     const infoClose = document.getElementById('infoClose');
     const infoList = document.getElementById('infoList');
     const infoStatus = document.getElementById('infoStatus');
+    const ipEnrichBtn = document.getElementById('ipEnrichBtn');
+    const infoData = {};
     let ipLookupFailed = false;
 
     const formatValue = (value) => {
@@ -1364,8 +1377,32 @@
       infoList.appendChild(li);
     };
 
+    const renderInfoList = () => {
+      infoList.innerHTML = '';
+      addInfoItem('User agent', infoData.userAgent);
+      addInfoItem('Platform', infoData.platform);
+      addInfoItem('Languages', infoData.languages);
+      addInfoItem('Time zone', infoData.timezone);
+      addInfoItem('Screen', `${infoData.screen} · ${infoData.colorDepth}`);
+      addInfoItem('Logical processors / Memory', `${infoData.hardwareConcurrency || 'Unknown'} · ${infoData.deviceMemory || 'Unknown'}`);
+      addInfoItem('Touch points', infoData.touchPoints);
+      addInfoItem('Cookies enabled', infoData.cookiesEnabled);
+      addInfoItem('Do Not Track', infoData.doNotTrack);
+      addInfoItem('Referrer', infoData.referrer);
+      if (infoData.connection) addInfoItem('Network hints', infoData.connection);
+      if (infoData.uaHints) addInfoItem('User-Agent hints', infoData.uaHints);
+      if (infoData.publicIp) {
+        addInfoItem('Public IP', infoData.publicIp);
+        addInfoItem('Network / ASN', infoData.network);
+        const location = [infoData.city, infoData.region, infoData.country].filter(Boolean).join(', ');
+        addInfoItem('Approx. location', location || 'Unavailable');
+      } else if (ipLookupFailed) {
+        addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
+      }
+    };
+
     const collectInfo = async () => {
-      const info = {
+      Object.assign(infoData, {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         languages: navigator.languages,
@@ -1378,33 +1415,19 @@
         cookiesEnabled: navigator.cookieEnabled,
         doNotTrack: navigator.doNotTrack,
         referrer: document.referrer || 'Direct / none',
-      };
+      });
 
       const enrichers = [];
       if (navigator.userAgentData?.getHighEntropyValues) {
         enrichers.push(
           navigator.userAgentData.getHighEntropyValues(['architecture', 'model', 'platformVersion', 'fullVersionList'])
-            .then(data => { info.uaHints = data; })
+            .then(data => { infoData.uaHints = data; })
             .catch(() => undefined)
         );
       }
 
-      enrichers.push(
-        fetch('https://ipapi.co/json/')
-          .then(r => r.ok ? r.json() : null)
-          .then(data => {
-            if (!data || typeof data !== 'object' || !data.ip) { ipLookupFailed = true; return; }
-            info.publicIp = data.ip;
-            info.network = data.org;
-            info.city = data.city;
-            info.region = data.region;
-            info.country = data.country_name;
-          })
-          .catch(() => { ipLookupFailed = true; })
-      );
-
       if (navigator.connection) {
-        info.connection = {
+        infoData.connection = {
           downlink: navigator.connection.downlink,
           effectiveType: navigator.connection.effectiveType,
           rtt: navigator.connection.rtt,
@@ -1413,29 +1436,39 @@
       }
 
       await Promise.allSettled(enrichers);
-      infoList.innerHTML = '';
-      addInfoItem('User agent', info.userAgent);
-      addInfoItem('Platform', info.platform);
-      addInfoItem('Languages', info.languages);
-      addInfoItem('Time zone', info.timezone);
-      addInfoItem('Screen', `${info.screen} · ${info.colorDepth}`);
-      addInfoItem('Logical processors / Memory', `${info.hardwareConcurrency || 'Unknown'} · ${info.deviceMemory || 'Unknown'}`);
-      addInfoItem('Touch points', info.touchPoints);
-      addInfoItem('Cookies enabled', info.cookiesEnabled);
-      addInfoItem('Do Not Track', info.doNotTrack);
-      addInfoItem('Referrer', info.referrer);
-      if (info.connection) addInfoItem('Network hints', info.connection);
-      if (info.uaHints) addInfoItem('User-Agent hints', info.uaHints);
-      if (info.publicIp) {
-        addInfoItem('Public IP', info.publicIp);
-        addInfoItem('Network / ASN', info.network);
-        const location = [info.city, info.region, info.country].filter(Boolean).join(', ');
-        addInfoItem('Approx. location', location || 'Unavailable');
-      } else if (ipLookupFailed) {
-        addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
-      }
+      renderInfoList();
       infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString()}.`;
       infoFab.classList.add('visible');
+    };
+
+    const fetchIpInfo = async () => {
+      ipLookupFailed = false;
+      ipEnrichBtn.disabled = true;
+      infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
+        const data = await res.json();
+        if (!data || typeof data !== 'object' || !data.ip) {
+          throw new Error('IP lookup failed (no data)');
+        }
+        Object.assign(infoData, {
+          publicIp: data.ip,
+          network: data.org,
+          city: data.city,
+          region: data.region,
+          country: data.country_name,
+        });
+      } catch (err) {
+        ipLookupFailed = true;
+        infoStatus.textContent = err?.message || 'Public IP lookup unavailable.';
+      } finally {
+        renderInfoList();
+        if (!ipLookupFailed) {
+          infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
+        }
+        ipEnrichBtn.disabled = false;
+      }
     };
 
     const openInfoPanel = () => {
@@ -1450,6 +1483,7 @@
     };
     infoFab.addEventListener('click', openInfoPanel);
     infoClose.addEventListener('click', closeInfoPanel);
+    ipEnrichBtn.addEventListener('click', fetchIpInfo);
     infoPanel.addEventListener('click', (e) => {
       if (e.target === infoPanel) closeInfoPanel();
     });
