@@ -587,7 +587,7 @@
         </div>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
-        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener">Open the timeline →</a>
+        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener noreferrer" aria-label="Open the timeline in a new tab">Open the timeline →</a>
       </p>
     </div>
   </section>
@@ -1435,12 +1435,19 @@
     const aimTrainerArea = document.getElementById('aimTrainerArea');
     const aimTrainerScore = document.getElementById('aimTrainerScore');
     const aimTrainerStatus = document.getElementById('aimTrainerStatus');
+    const AIM_SCORE_PER_LEVEL = 5;
+    const AIM_INITIAL_SPEED = 1300;
+    const AIM_MIN_SPEED = 450;
+    const AIM_SPEED_STEP = 60;
+    const AIM_INITIAL_SIZE = 52;
+    const AIM_MIN_SIZE = 24;
+    const AIM_SIZE_STEP = 2;
     let aimTrainerActive = false;
     let aimTrainerScoreVal = 0;
     let aimTrainerLevel = 1;
     let aimTrainerBest = 0;
-    let aimTrainerSpeed = 1300;
-    let aimTrainerSize = 52;
+    let aimTrainerSpeed = AIM_INITIAL_SPEED;
+    let aimTrainerSize = AIM_INITIAL_SIZE;
     let aimTrainerTimeout = null;
     let aimTrainerTarget = null;
 
@@ -1485,9 +1492,9 @@
       target.addEventListener('click', () => {
         if (!aimTrainerActive) return;
         aimTrainerScoreVal += 1;
-        aimTrainerLevel = 1 + Math.floor(aimTrainerScoreVal / 5);
-        aimTrainerSpeed = Math.max(450, aimTrainerSpeed - 60);
-        aimTrainerSize = Math.max(24, aimTrainerSize - 2);
+        aimTrainerLevel = 1 + Math.floor(aimTrainerScoreVal / AIM_SCORE_PER_LEVEL);
+        aimTrainerSpeed = Math.max(AIM_MIN_SPEED, aimTrainerSpeed - AIM_SPEED_STEP);
+        aimTrainerSize = Math.max(AIM_MIN_SIZE, aimTrainerSize - AIM_SIZE_STEP);
         updateAimTrainerMeta();
         aimTrainerStatus.textContent = 'Nice! Next target incoming.';
         spawnAimTarget();
@@ -1502,8 +1509,8 @@
       aimTrainerActive = true;
       aimTrainerScoreVal = 0;
       aimTrainerLevel = 1;
-      aimTrainerSpeed = 1300;
-      aimTrainerSize = 52;
+      aimTrainerSpeed = AIM_INITIAL_SPEED;
+      aimTrainerSize = AIM_INITIAL_SIZE;
       aimTrainerBtn.textContent = 'Stop Aim Trainer';
       aimTrainerStatus.textContent = 'Go! Hit the targets before they disappear.';
       updateAimTrainerMeta();
