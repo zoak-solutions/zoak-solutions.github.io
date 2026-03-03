@@ -265,7 +265,7 @@
     /* Uptime widget */
     .uptime-val { font-size: 2rem; font-weight: 700; color: var(--color-success); }
     .uptime-bar { height: 6px; border-radius: 99px; background: var(--color-border); overflow: hidden; margin-top: .5rem; }
-    .uptime-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--color-success), #56e889); width: 99.9%; }
+    .uptime-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--color-success), #56e889); width: 99.999%; }
 
     /* Security tip widget */
     .tip-text { font-size: .95rem; color: var(--color-text-secondary); min-height: 80px; }
@@ -709,7 +709,7 @@
             Platform Status
           </div>
           <div style="display:flex;align-items:baseline;gap:.4rem;">
-            <div class="uptime-val">99.9%</div>
+            <div class="uptime-val">99.999%</div>
             <div style="font-size:.8rem;color:var(--color-success)">↑ All Systems Operational</div>
           </div>
           <div class="uptime-bar"><div class="uptime-fill"></div></div>
@@ -1130,8 +1130,8 @@
     const dateEl  = document.getElementById('clock-date');
     const tick = () => {
       const now = new Date();
-      const opts = { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-      const dateOpts = { timeZone: 'Australia/Sydney', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      const opts = { timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      const dateOpts = { timeZone: 'Australia/Melbourne', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
       clockEl.textContent = now.toLocaleTimeString('en-AU', opts);
       dateEl.textContent  = now.toLocaleDateString('en-AU', dateOpts);
     };
