@@ -440,7 +440,7 @@
     <div class="hero-bg"></div>
     <div class="hero-inner">
       <img src="https://raw.githubusercontent.com/zoak-solutions/.github/refs/heads/master/assets/ZOAK_logo_square_2026.svg"
-           alt="ZOAK Solutions logo" class="hero-logo" width="160" />
+           alt="ZOAK Solutions logo" class="hero-logo" width="160" height="270" />
       <div class="hero-eyebrow">
         <span class="pill">Est. 2013 · Australia</span>
       </div>
@@ -550,7 +550,7 @@
       <div class="story-frame reveal">
         <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
                 title="ZOAK Solutions Our Story presentation" loading="lazy"
-                sandbox="allow-same-origin allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
+                sandbox="allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
         Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
@@ -1185,7 +1185,21 @@
         return String(data);
       }
     };
-    const cleanDomain = (value) => value.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const extractDomain = (value) => value.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const fetchWithTimeout = async (url, options = {}, timeoutMs = 10000) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
+    };
 
     const whoisInput = document.getElementById('whoisInput');
     const whoisBtn = document.getElementById('whoisBtn');
@@ -1211,11 +1225,11 @@
       };
     };
     const runWhois = async () => {
-      const domain = cleanDomain(whoisInput.value.trim());
+      const domain = extractDomain(whoisInput.value.trim());
       if (!domain) { whoisResult.textContent = 'Enter a domain name first.'; return; }
       whoisResult.textContent = 'Looking up RDAP records…';
       try {
-        const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`);
+        const res = await fetchWithTimeout(`https://rdap.org/domain/${encodeURIComponent(domain)}`);
         if (!res.ok) throw new Error(`RDAP lookup failed (${res.status})`);
         const data = await res.json();
         whoisResult.textContent = formatJson(summarizeRdap(data, domain));
@@ -1229,13 +1243,13 @@
     const dnsBtn = document.getElementById('dnsBtn');
     const dnsResult = document.getElementById('dnsResult');
     const runDns = async () => {
-      const domain = cleanDomain(dnsInput.value.trim());
+      const domain = extractDomain(dnsInput.value.trim());
       if (!domain) { dnsResult.textContent = 'Enter a domain name first.'; return; }
       dnsResult.textContent = 'Resolving DNS…';
       try {
         const types = ['A', 'AAAA', 'MX', 'TXT'];
         const responses = await Promise.all(types.map(async (type) => {
-          const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`);
+          const res = await fetchWithTimeout(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`);
           if (!res.ok) return { type, error: res.status };
           const data = await res.json();
           return { type, data };
@@ -1261,7 +1275,7 @@
     traceBtn.addEventListener('click', async () => {
       traceResult.textContent = 'Tracing network edge…';
       try {
-        const res = await fetch('https://trace.dns.google/trace');
+        const res = await fetchWithTimeout('https://trace.dns.google/trace');
         if (!res.ok) throw new Error('Trace failed');
         const text = await res.text();
         traceResult.textContent = text.trim() || 'Trace complete, but no data returned.';
@@ -1359,7 +1373,8 @@
 
     const formatValue = (value) => {
       if (Array.isArray(value)) return value.join(', ');
-      if (value === undefined || value === null || value === '') return 'Unavailable';
+      if (value === undefined || value === null) return 'Unavailable';
+      if (value === '') return '(empty)';
       if (typeof value === 'object') return formatJson(value);
       return String(value);
     };
@@ -1387,7 +1402,8 @@
       addInfoItem('Logical processors / Memory', `${infoData.hardwareConcurrency || 'Unknown'} · ${infoData.deviceMemory || 'Unknown'}`);
       addInfoItem('Touch points', infoData.touchPoints);
       addInfoItem('Cookies enabled', infoData.cookiesEnabled);
-      addInfoItem('Do Not Track', infoData.doNotTrack);
+      addInfoItem('Do Not Track (legacy)', infoData.doNotTrack);
+      addInfoItem('Global Privacy Control', infoData.globalPrivacyControl);
       addInfoItem('Referrer', infoData.referrer);
       if (infoData.connection) addInfoItem('Network hints', infoData.connection);
       if (infoData.uaHints) addInfoItem('User-Agent hints', infoData.uaHints);
@@ -1414,6 +1430,7 @@
         touchPoints: navigator.maxTouchPoints,
         cookiesEnabled: navigator.cookieEnabled,
         doNotTrack: navigator.doNotTrack,
+        globalPrivacyControl: navigator.globalPrivacyControl,
         referrer: document.referrer || 'Direct / none',
       });
 
@@ -1444,9 +1461,11 @@
     const fetchIpInfo = async () => {
       ipLookupFailed = false;
       ipEnrichBtn.disabled = true;
+      const originalLabel = ipEnrichBtn.textContent;
+      ipEnrichBtn.textContent = 'Fetching…';
       infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
       try {
-        const res = await fetch('https://ipapi.co/json/');
+        const res = await fetchWithTimeout('https://ipapi.co/json/');
         if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
         const data = await res.json();
         if (!data || typeof data !== 'object' || !data.ip) {
@@ -1468,6 +1487,7 @@
           infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
         }
         ipEnrichBtn.disabled = false;
+        ipEnrichBtn.textContent = originalLabel;
       }
     };
 
