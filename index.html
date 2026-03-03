@@ -1070,7 +1070,17 @@
     const countUp = (el, target, suffix = '') => {
       let start = 0;
       const dur = 1600;
-      const decimals = Number.isInteger(target) ? 0 : (String(target).split('.')[1] || '').length;
+      const getDecimals = (value) => {
+        if (Number.isInteger(value)) return 0;
+        const text = String(value);
+        if (text.includes('e-')) {
+          const exp = Number(text.split('e-')[1]);
+          return Number.isFinite(exp) ? exp : 0;
+        }
+        const dot = text.indexOf('.');
+        return dot === -1 ? 0 : text.length - dot - 1;
+      };
+      const decimals = getDecimals(target);
       const formatValue = (value) => value.toFixed(decimals);
       const step = (timestamp) => {
         if (!step.start) step.start = timestamp;
