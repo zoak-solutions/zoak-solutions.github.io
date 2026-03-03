@@ -434,7 +434,7 @@
     <div class="container nav-inner">
       <a href="#hero" class="nav-logo" aria-label="ZOAK Solutions home">
         <span class="nav-logo-mark" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.2 1077" width="32">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.2 1077" width="32" aria-hidden="true">
             <style>.nv-a{fill:#fedc00}.nv-b{fill:#f08525}.nv-c{fill:#77868d}.nv-d{fill:#f18b20}</style>
             <path class="nv-a" d="M601.8 154.9c8 4.4 11.1 14.8 6 23l-1 1.6c-.2.3-1.2-.6-1.3-.7-2.7-3.6-6.4-6.5-11-8.5L556.7 154 273.9 33.4c-2.3-1-6.3-1.5-7.7-.1-2.1 2.1-3.2 5.7-3.2 9l.03 183.5c0 6.1 2.8 11.4 7.4 14.7 3.9 2.9 7.9 5.8 12.5 7.8l74.6 32.1 1.7 1.1-1.7.8 19.5 8.5c1.3.5 3.7.6 4.9.7l181.5 78.3 47.9 21.9c4.8 2.2 9.1 5.7 11.8 10.1 8.5 14.1 3.6 32-10.5 40.3-4.9 2.9-9.6 4.8-15.1 6.9L358.5 537.5c-1 0-4 .5-5.2 0l-29.5-11.5 1.6-2.1 264.5-98.9c4.3-1.6 13.7-4.6 10.6-10.1l-43.9-20.1-212.3-92.4c-.7-1-2-2-3.3-2.6l-15.9-6.9c-2.4-1.1-4.7-1.7-7.1-1.7l-38.5-16.3c-15.2-6.4-33.7-16.6-39.1-33-1.8-5.5-3.3-11.1-3.3-17.1l0-182.8c0-5.5 1.6-10.7 3.4-15.5 3.3-9 10.5-14.9 19.4-17.7 4.3-1.3 8.6-2.1 12.9-.9 4.8 1.4 9 2.6 13.8 4.8L593 150.3c3.4 1.6 6 3.1 8.8 4.6z"/>
             <path class="nv-d" d="M320.6 294.6c2.3.3 4.6 1.1 7 2.1l12.5 5.5-1.3 1.4-297.8 111.9c-9.3 3.5-14.8 12.2-14.8 21.8l0 185.4c0 4.2 1.5 8.8 4.8 11.4l396.7 161.8c5.4 2.2 12.2 2.3 16-2 3.9-4.6 6.8-11.3 6.8-18l.08-164.9c0-14.6-14.3-23.3-26.2-27.9l-91.5-35.5c-.4-.3-1.1-1-1.6-1.2l1.2 0c.3 0 .3-1 0-1.1l-1.3-.4-30.9-12.2c-.5-.2-1.9.1-2.1.5l-234.7-91.8c-4.4-1.7-6.4-6-4.9-10 1.3-3.6 5.5-6.4 9.9-4.7l250.6 98.4c.9.4 1.9.4 2.5.2l.7 1.1-2.4.5 33.7 13.3c1.1.4 2.5.3 3.2-.3l75.6 29.5c5.8 2.3 10.9 5.4 15.9 8.9 11.2 7.8 17.8 19.7 17.8 33.7l0 161c0 8.5-2.2 16.4-5.7 23.7-5.4 11.2-19.4 19.1-30.9 15.6-5.1-1.6-9.6-3.1-14.7-5.2L23.4 647.5c-7.8-3.2-12.6-15.4-12.6-23.2l-.06-187.7c0-15 8.7-27.3 21.4-34 4.7-2.5 9-3.8 14.1-5.7L320.6 294.6z"/>
@@ -515,7 +515,7 @@
         </div>
         <div class="reveal reveal-delay-3">
           <div class="stat-num" data-target="99.999" data-suffix="%">0</div>
-          <div class="stat-label">% Uptime SLA</div>
+          <div class="stat-label">Uptime SLA</div>
         </div>
       </div>
     </div>
@@ -879,7 +879,7 @@
           <div class="tool-form">
             <button id="aimTrainerBtn" class="tool-btn" type="button">Start Aim Trainer</button>
           </div>
-          <div id="aimTrainerArea" class="aim-trainer-area" aria-live="polite"></div>
+          <div id="aimTrainerArea" class="aim-trainer-area"></div>
           <div class="aim-trainer-meta" id="aimTrainerScore">Score: 0 · Level 1 · Best 0</div>
           <div class="tool-meta" id="aimTrainerStatus">Click start to begin.</div>
         </div>
@@ -1071,7 +1071,7 @@
       let start = 0;
       const dur = 1600;
       const decimals = Number.isInteger(target) ? 0 : (String(target).split('.')[1] || '').length;
-      const formatValue = (value) => decimals ? value.toFixed(decimals) : Math.round(value).toString();
+      const formatValue = (value) => value.toFixed(decimals);
       const step = (timestamp) => {
         if (!step.start) step.start = timestamp;
         const progress = Math.min((timestamp - step.start) / dur, 1);
