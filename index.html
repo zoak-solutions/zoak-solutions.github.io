@@ -583,7 +583,7 @@
       <div class="story-frame reveal">
         <div class="story-frame-inner">
           <img src="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png"
-               alt="ZOAK Solutions timeline" loading="lazy" />
+               alt="ZOAK Solutions timeline" loading="lazy" width="1600" height="900" />
         </div>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
@@ -1485,9 +1485,6 @@
       target.className = 'aim-trainer-target';
       target.setAttribute('aria-label', 'Aim target');
       const padding = 8;
-      if (!aimTrainerBounds.width || !aimTrainerBounds.height) {
-        refreshAimTrainerBounds();
-      }
       const areaWidth = aimTrainerBounds.width;
       const areaHeight = aimTrainerBounds.height;
       const size = aimTrainerSize;
