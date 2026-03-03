@@ -158,7 +158,7 @@
     @keyframes pulse-bg { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .6; } }
 
     .hero-inner { position: relative; z-index: 1; max-width: 760px; }
-    .hero-logo { width: min(160px, 28vw); height: auto; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
+    .hero-logo { width: min(160px, 28vw); height: auto; aspect-ratio: 1 / 1; object-fit: contain; margin-bottom: 2rem; animation: fadeInUp .8s ease both; filter: drop-shadow(0 8px 24px rgba(215,136,29,.25)); }
     .hero-eyebrow { animation: fadeInUp .8s .1s ease both; }
     .hero-title { animation: fadeInUp .8s .2s ease both; margin: .75rem 0 1.25rem; }
     .hero-subtitle {
@@ -440,7 +440,7 @@
     <div class="hero-bg"></div>
     <div class="hero-inner">
       <img src="https://raw.githubusercontent.com/zoak-solutions/.github/refs/heads/master/assets/ZOAK_logo_square_2026.svg"
-           alt="ZOAK Solutions logo" class="hero-logo" width="160" height="160" />
+           alt="ZOAK Solutions logo" class="hero-logo" width="160" />
       <div class="hero-eyebrow">
         <span class="pill">Est. 2013 · Australia</span>
       </div>
@@ -550,7 +550,7 @@
       <div class="story-frame reveal">
         <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
                 title="ZOAK Solutions Our Story presentation" loading="lazy"
-                sandbox="allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
+                sandbox="allow-same-origin allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
         Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
@@ -919,7 +919,10 @@
     </div>
   </footer>
 
-  <button id="infoFab" class="info-fab" type="button" aria-label="View your_info details">💁‍♂️your_info</button>
+  <button id="infoFab" class="info-fab" type="button" aria-label="View your_info details">
+    <span aria-hidden="true">💁‍♂️</span>
+    <span>your_info</span>
+  </button>
   <div class="info-panel" id="infoPanel" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="info-card">
       <div class="info-header">
@@ -1339,6 +1342,7 @@
     const infoClose = document.getElementById('infoClose');
     const infoList = document.getElementById('infoList');
     const infoStatus = document.getElementById('infoStatus');
+    let ipLookupFailed = false;
 
     const formatValue = (value) => {
       if (Array.isArray(value)) return value.join(', ');
@@ -1389,14 +1393,14 @@
         fetch('https://ipapi.co/json/')
           .then(r => r.ok ? r.json() : null)
           .then(data => {
-            if (!data || typeof data !== 'object' || !data.ip) return;
+            if (!data || typeof data !== 'object' || !data.ip) { ipLookupFailed = true; return; }
             info.publicIp = data.ip;
             info.network = data.org;
             info.city = data.city;
             info.region = data.region;
             info.country = data.country_name;
           })
-          .catch(() => undefined)
+          .catch(() => { ipLookupFailed = true; })
       );
 
       if (navigator.connection) {
@@ -1415,7 +1419,7 @@
       addInfoItem('Languages', info.languages);
       addInfoItem('Time zone', info.timezone);
       addInfoItem('Screen', `${info.screen} · ${info.colorDepth}`);
-      addInfoItem('CPU / Memory', `${info.hardwareConcurrency || 'Unknown'} · ${info.deviceMemory || 'Unknown'}`);
+      addInfoItem('Logical processors / Memory', `${info.hardwareConcurrency || 'Unknown'} · ${info.deviceMemory || 'Unknown'}`);
       addInfoItem('Touch points', info.touchPoints);
       addInfoItem('Cookies enabled', info.cookiesEnabled);
       addInfoItem('Do Not Track', info.doNotTrack);
@@ -1425,7 +1429,10 @@
       if (info.publicIp) {
         addInfoItem('Public IP', info.publicIp);
         addInfoItem('Network / ASN', info.network);
-        addInfoItem('Approx. location', `${info.city || ''} ${info.region || ''} ${info.country || ''}`.trim());
+        const location = [info.city, info.region, info.country].filter(Boolean).join(', ');
+        addInfoItem('Approx. location', location || 'Unavailable');
+      } else if (ipLookupFailed) {
+        addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
       }
       infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString()}.`;
       infoFab.classList.add('visible');
