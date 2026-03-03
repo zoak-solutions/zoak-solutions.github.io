@@ -587,7 +587,7 @@
         </div>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
-        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener noreferrer" aria-label="Open the timeline in a new tab">Open the timeline →</a>
+        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener noreferrer">Open the timeline →</a>
       </p>
     </div>
   </section>
@@ -1442,6 +1442,7 @@
     const AIM_INITIAL_SIZE = 52;
     const AIM_MIN_SIZE = 24;
     const AIM_SIZE_STEP = 2;
+    const aimTrainerBounds = { width: 0, height: 0 };
     let aimTrainerActive = false;
     let aimTrainerScoreVal = 0;
     let aimTrainerLevel = 1;
@@ -1451,6 +1452,10 @@
     let aimTrainerTimeout = null;
     let aimTrainerTarget = null;
 
+    const refreshAimTrainerBounds = () => {
+      aimTrainerBounds.width = aimTrainerArea.clientWidth || 1;
+      aimTrainerBounds.height = aimTrainerArea.clientHeight || 1;
+    };
     const updateAimTrainerMeta = () => {
       aimTrainerScore.textContent = `Score: ${aimTrainerScoreVal} · Level ${aimTrainerLevel} · Best ${aimTrainerBest}`;
     };
@@ -1480,8 +1485,11 @@
       target.className = 'aim-trainer-target';
       target.setAttribute('aria-label', 'Aim target');
       const padding = 8;
-      const areaWidth = aimTrainerArea.clientWidth || 1;
-      const areaHeight = aimTrainerArea.clientHeight || 1;
+      if (!aimTrainerBounds.width || !aimTrainerBounds.height) {
+        refreshAimTrainerBounds();
+      }
+      const areaWidth = aimTrainerBounds.width;
+      const areaHeight = aimTrainerBounds.height;
       const size = aimTrainerSize;
       const rangeX = Math.max(0, areaWidth - size - padding * 2);
       const rangeY = Math.max(0, areaHeight - size - padding * 2);
@@ -1514,6 +1522,7 @@
       aimTrainerBtn.textContent = 'Stop Aim Trainer';
       aimTrainerStatus.textContent = 'Go! Hit the targets before they disappear.';
       updateAimTrainerMeta();
+      refreshAimTrainerBounds();
       spawnAimTarget();
     };
     aimTrainerBtn.addEventListener('click', () => {
@@ -1522,6 +1531,9 @@
       } else {
         endAimTrainer('Session stopped. Click start to play again.');
       }
+    });
+    window.addEventListener('resize', () => {
+      if (aimTrainerActive) refreshAimTrainerBounds();
     });
 
     /* ── your_info widget ─────────────────────────────────────────────── */
