@@ -440,7 +440,7 @@
     <div class="hero-bg"></div>
     <div class="hero-inner">
       <img src="https://raw.githubusercontent.com/zoak-solutions/.github/refs/heads/master/assets/ZOAK_logo_square_2026.svg"
-           alt="ZOAK Solutions logo" class="hero-logo" width="160" />
+           alt="ZOAK Solutions logo" class="hero-logo" width="160" height="160" />
       <div class="hero-eyebrow">
         <span class="pill">Est. 2013 · Australia</span>
       </div>
@@ -549,7 +549,8 @@
       </div>
       <div class="story-frame reveal">
         <iframe src="https://drive.google.com/file/d/167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA/preview"
-                title="ZOAK Solutions Our Story presentation" loading="lazy" allow="autoplay"></iframe>
+                title="ZOAK Solutions Our Story presentation" loading="lazy"
+                sandbox="allow-same-origin allow-scripts allow-presentation" referrerpolicy="no-referrer"></iframe>
       </div>
       <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
         Prefer full screen? <a href="https://drive.google.com/open?id=167C0jT5nEG3S9Zst9mvSt6PtQhw3LnZA&amp;usp=drive_fs" target="_blank" rel="noopener">Open the presentation →</a>
@@ -923,13 +924,14 @@
     <div class="info-card">
       <div class="info-header">
         <div>
-          <span class="pill">Your Info</span>
+          <span class="pill">your_info</span>
           <h3 style="margin-top:.35rem;">What your browser shares</h3>
         </div>
         <button id="infoClose" class="info-close" type="button">Close</button>
       </div>
       <p style="margin-top:.75rem;color:var(--color-text-secondary);">
         This snapshot highlights data automatically shared with a simple website, including device hints and public metadata.
+        Public IP enrichment uses ipapi.co.
       </p>
       <ul id="infoList" class="info-list"></ul>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
@@ -1196,11 +1198,11 @@
       whoisResult.textContent = 'Looking up RDAP records…';
       try {
         const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`);
-        if (!res.ok) throw new Error('Lookup failed');
+        if (!res.ok) throw new Error(`RDAP lookup failed (${res.status})`);
         const data = await res.json();
         whoisResult.textContent = formatJson(summarizeRdap(data, domain));
       } catch (err) {
-        whoisResult.textContent = 'RDAP lookup unavailable. Please try again later.';
+        whoisResult.textContent = err?.message || 'RDAP lookup unavailable. Please try again later.';
       }
     };
     whoisBtn.addEventListener('click', runWhois);
@@ -1213,14 +1215,22 @@
       if (!domain) { dnsResult.textContent = 'Enter a domain name first.'; return; }
       dnsResult.textContent = 'Resolving DNS…';
       try {
-        const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=ANY`);
-        if (!res.ok) throw new Error('DNS lookup failed');
-        const data = await res.json();
-        const answers = (data.Answer || []).map(a => `${a.name} ${a.type} ${a.data}`);
-        const authority = (data.Authority || []).map(a => `${a.name} ${a.type} ${a.data}`);
+        const types = ['A', 'AAAA', 'MX', 'TXT'];
+        const responses = await Promise.all(types.map(async (type) => {
+          const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`);
+          if (!res.ok) return { type, error: res.status };
+          const data = await res.json();
+          return { type, data };
+        }));
         const lines = [];
-        if (answers.length) { lines.push('Answer:'); lines.push(...answers); }
-        if (authority.length) { lines.push('', 'Authority:'); lines.push(...authority); }
+        responses.forEach(({ type, data, error }) => {
+          if (error) { lines.push(`${type}: lookup failed (${error})`); return; }
+          const answers = (data.Answer || []).map(a => `${a.name} ${a.type} ${a.data}`);
+          if (answers.length) {
+            lines.push(`${type} Records:`);
+            lines.push(...answers);
+          }
+        });
         dnsResult.textContent = lines.length ? lines.join('\n') : 'No records returned.';
       } catch (err) {
         dnsResult.textContent = 'DNS lookup unavailable. Please try again later.';
@@ -1331,7 +1341,14 @@
     const addInfoItem = (label, value) => {
       const li = document.createElement('li');
       li.className = 'info-item';
-      li.innerHTML = `<span class="info-key">${label}</span><span class="info-value">${formatValue(value)}</span>`;
+      const key = document.createElement('span');
+      key.className = 'info-key';
+      key.textContent = label;
+      const val = document.createElement('span');
+      val.className = 'info-value';
+      val.textContent = formatValue(value);
+      li.appendChild(key);
+      li.appendChild(val);
       infoList.appendChild(li);
     };
 
@@ -1402,7 +1419,7 @@
         addInfoItem('Network / ASN', info.network);
         addInfoItem('Approx. location', `${info.city || ''} ${info.region || ''} ${info.country || ''}`.trim());
       }
-      infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString('en-AU')}.`;
+      infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString()}.`;
       infoFab.classList.add('visible');
     };
 
