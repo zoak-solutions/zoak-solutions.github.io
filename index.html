@@ -280,6 +280,16 @@
     .osm-tag:hover { background: rgba(215,136,29,.2); }
     .osm-link { font-size: .85rem; color: var(--color-primary); font-weight: 600; margin-top: .25rem; }
 
+    /* Tech stack widget */
+    .tech-stack-grid { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .tech-stack-item {
+      display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .6rem; border-radius: 10px;
+      border: 1px solid var(--color-border); background: var(--color-surface); font-size: .8rem; font-weight: 600;
+      color: var(--color-text-primary); text-decoration: none; transition: all .2s;
+    }
+    .tech-stack-item:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .tech-stack-item img { width: 20px; height: 20px; border-radius: 6px; object-fit: contain; }
+
     /* ─── Our Story ───────────────────────────────────────────────────── */
     #story { background: var(--color-surface); }
     .story-frame {
@@ -776,7 +786,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Technology Stack
           </div>
-          <div id="techStack" style="display:flex;flex-wrap:wrap;gap:.5rem;"></div>
+          <div id="techStack" class="tech-stack-grid"></div>
         </div>
 
       </div>
@@ -1164,17 +1174,70 @@
     });
 
     /* ── Tech stack widget ─────────────────────────────────────────────── */
+    const shieldLogo ="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJsNyA0djZjMCA1LjI1LTMuNDQgMTAuMDUtNyAxMmMtMy41Ni0xLjk1LTctNi43NS03LTEyVjZsNy00em0wIDIuMzFMNyA2LjE4VjEyYzAgNC4xMiAyLjY3IDguMTUgNSA5Ljg5IDIuMzMtMS43NCA1LTUuNzcgNS05Ljg5VjYuMThMMTIgNC4zMXoiIGZpbGw9IiM2NjYiLz48L3N2Zz4=";
+
+    const ghLogo = (owner) => `https://github.com/${owner}.png?size=64`;
+
     const stack = [
-      'AWS', 'Terraform', 'GitHub Actions', 'PowerShell', 'Python', 'Ansible',
-      'M365 / Azure', 'Pydantic', 'CodeQL', 'JSON Schema', 'ISO 27001', 'ASD ISM',
+      // Cloud / Infra
+      { name: "AWS", url: "https://github.com/aws", logo: ghLogo("aws") },
+      { name: "Azure", url: "https://github.com/Azure", logo: ghLogo("Azure") },
+      { name: "Cloudflare", url: "https://github.com/cloudflare", logo: ghLogo("cloudflare") },
+      { name: "HashiCorp", url: "https://github.com/hashicorp", logo: ghLogo("hashicorp") },
+      { name: "AWS CloudFormation", url: "https://github.com/aws-cloudformation/aws-cloudformation-templates", logo: ghLogo("aws-cloudformation") },
+      { name: "Docker", url: "https://github.com/docker", logo: ghLogo("docker") },
+      { name: "Hyper-V", url: "https://github.com/MicrosoftDocs/Virtualization-Documentation", logo: ghLogo("MicrosoftDocs") },
+      { name: "Tailscale", url: "https://github.com/tailscale/tailscale", logo: ghLogo("tailscale") },
+
+      // Microsoft 365 / Config as Code
+      { name: "Microsoft Graph (M365)", url: "https://github.com/microsoftgraph", logo: ghLogo("microsoftgraph") },
+      { name: "Microsoft365DSC", url: "https://github.com/microsoft/Microsoft365DSC", logo: ghLogo("microsoft") },
+
+      // Dev / Automation
+      { name: "GitHub", url: "https://github.com", logo: "https://github.com/favicon.ico" },
+      { name: "PowerShell", url: "https://github.com/PowerShell/PowerShell", logo: ghLogo("PowerShell") },
+      { name: "Go", url: "https://github.com/golang/go", logo: ghLogo("golang") },
+      { name: "Bash", url: "https://github.com/bminor/bash", logo: ghLogo("bminor") },
+
+      // Editor / Terminal workflow
+      { name: "Neovim", url: "https://github.com/neovim/neovim", logo: ghLogo("neovim") },
+      { name: "tmux", url: "https://github.com/tmux/tmux", logo: ghLogo("tmux") },
+
+      // OS / Platform
+      { name: "Canonical", url: "https://github.com/canonical", logo: ghLogo("canonical") },
+      { name: "Ubuntu", url: "https://github.com/ubuntu", logo: ghLogo("ubuntu") },
+
+      // AppSec / Standards / GRC
+      { name: "CodeQL", url: "https://github.com/github/codeql", logo: ghLogo("github") },
+      { name: "JSON Schema", url: "https://github.com/json-schema-org", logo: ghLogo("json-schema-org") },
+      { name: "Maltego", url: "https://github.com/MaltegoTech", logo: ghLogo("MaltegoTech") },
+      { name: "OpenVAS (Greenbone)", url: "https://github.com/greenbone/openvas-scanner", logo: ghLogo("greenbone") },
+
+      // Compliance (no “official” GitHub project to hang a logo off)
+      { name: "ISO/IEC 27001", url: "https://www.iso.org/standard/27001", logo: shieldLogo },
+      { name: "ASD ISM", url: "https://www.cyber.gov.au/business-government/asds-cyber-security-frameworks/ism", logo: shieldLogo },
+
+      { name: "OSM", url: "https://www.osm.dev", logo: "https://www.osm.dev/favicon.ico" },
     ];
     const tsEl = document.getElementById('techStack');
-    stack.forEach((s, i) => {
-      const span = document.createElement('span');
-      span.className = 'service-tag';
-      span.style.cssText = `animation: fadeInUp .4s ${i * .04}s ease both; opacity:0;`;
-      span.textContent = s;
-      tsEl.appendChild(span);
+    stack.forEach((item, i) => {
+      const link = document.createElement('a');
+      link.className = 'tech-stack-item';
+      link.href = item.url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.style.cssText = `animation: fadeInUp .4s ${i * .04}s ease both; opacity:0;`;
+
+      const logo = document.createElement('img');
+      logo.src = item.logo;
+      logo.alt = `${item.name} logo`;
+      logo.loading = 'lazy';
+
+      const label = document.createElement('span');
+      label.textContent = item.name;
+
+      link.append(logo, label);
+      tsEl.appendChild(link);
     });
 
     /* ── Handy tools ───────────────────────────────────────────────────── */
