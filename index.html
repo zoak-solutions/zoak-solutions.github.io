@@ -1203,6 +1203,7 @@
         });
 
         const rowOffsets = [0, 0];
+        // Row 0 shifts with a negative offset, row 1 shifts with a positive offset for alternating motion.
         const getRotatedOffset = (currentOffset, rowIndex, length) => (
           rowIndex === 0
             ? (currentOffset - 1 + length) % length
