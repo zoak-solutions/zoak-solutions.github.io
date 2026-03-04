@@ -1219,7 +1219,7 @@
           setInterval(() => {
             [0, 1].forEach((rowIndex) => {
               const repos = rowRepos[rowIndex];
-              if (repos.length <= 1) return;
+              if (repos.length <= rowCards[rowIndex].length) return;
               rowOffsets[rowIndex] = rowIndex === 0
                 ? (rowOffsets[rowIndex] - 1 + repos.length) % repos.length
                 : (rowOffsets[rowIndex] + 1) % repos.length;
