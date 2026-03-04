@@ -1203,6 +1203,11 @@
         });
 
         const rowOffsets = [0, 0];
+        const getNextOffset = (currentOffset, rowIndex, length) => (
+          rowIndex === 0
+            ? (currentOffset - 1 + length) % length
+            : (currentOffset + 1) % length
+        );
         const renderRow = (rowIndex) => {
           const repos = rowRepos[rowIndex];
           const slots = rowCards[rowIndex];
@@ -1218,18 +1223,16 @@
 
         const rowHasOverflow = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
         if (filtered.length > MAX_VISIBLE && rowHasOverflow.some(Boolean)) {
-          const repoRotationTimer = setInterval(() => {
+          const rotationIntervalId = setInterval(() => {
             [0, 1].forEach((rowIndex) => {
               if (!rowHasOverflow[rowIndex]) return;
               const repos = rowRepos[rowIndex];
               // Row 0 shifts with a negative offset, row 1 shifts with a positive offset.
-              rowOffsets[rowIndex] = rowIndex === 0
-                ? (rowOffsets[rowIndex] - 1 + repos.length) % repos.length
-                : (rowOffsets[rowIndex] + 1) % repos.length;
+              rowOffsets[rowIndex] = getNextOffset(rowOffsets[rowIndex], rowIndex, repos.length);
               renderRow(rowIndex);
             });
           }, ROTATE_INTERVAL);
-          window.addEventListener('pagehide', () => clearInterval(repoRotationTimer), { once: true });
+          window.addEventListener('pagehide', () => clearInterval(rotationIntervalId), { once: true });
         }
       })
       .catch(() => {
