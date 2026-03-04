@@ -1222,13 +1222,12 @@
         renderRow(0);
         renderRow(1);
 
-        const rowHasOverflow = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
-        if (filtered.length > MAX_VISIBLE && rowHasOverflow.some(Boolean)) {
+        const rowOverflowStates = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
+        if (filtered.length > MAX_VISIBLE && rowOverflowStates.some(Boolean)) {
           const rotationIntervalId = setInterval(() => {
             [0, 1].forEach((rowIndex) => {
-              if (!rowHasOverflow[rowIndex]) return;
+              if (!rowOverflowStates[rowIndex]) return;
               const repos = rowRepos[rowIndex];
-              // Row 0 shifts with a negative offset, row 1 shifts with a positive offset for alternating motion.
               rowOffsets[rowIndex] = getRotatedOffset(rowOffsets[rowIndex], rowIndex, repos.length);
               renderRow(rowIndex);
             });
