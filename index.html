@@ -1216,13 +1216,13 @@
         renderRow(0);
         renderRow(1);
 
-        const rowOverflowFlags = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
-        if (filtered.length > MAX_VISIBLE && rowOverflowFlags.some(Boolean)) {
+        const rowHasOverflow = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
+        if (filtered.length > MAX_VISIBLE && rowHasOverflow.some(Boolean)) {
           const repoRotationTimer = setInterval(() => {
             [0, 1].forEach((rowIndex) => {
-              if (!rowOverflowFlags[rowIndex]) return;
+              if (!rowHasOverflow[rowIndex]) return;
               const repos = rowRepos[rowIndex];
-              // Row 0 shifts right (moves last item forward), row 1 shifts left (moves first item back).
+              // Row 0 shifts with a negative offset, row 1 shifts with a positive offset.
               rowOffsets[rowIndex] = rowIndex === 0
                 ? (rowOffsets[rowIndex] - 1 + repos.length) % repos.length
                 : (rowOffsets[rowIndex] + 1) % repos.length;
