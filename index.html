@@ -238,7 +238,9 @@
     .service-tag { padding: .2rem .6rem; border-radius: 99px; font-size: .7rem; font-weight: 600; background: var(--color-surface); color: var(--color-accent); border: 1px solid var(--color-border); }
 
     /* ─── Repos ────────────────────────────────────────────────────────── */
-    .repos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .repos-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+    @media (max-width: 980px) { .repos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .repos-grid { grid-template-columns: 1fr; } }
     .repo-card {
       background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius);
       padding: 1.5rem; transition: all var(--transition); display: flex; flex-direction: column;
@@ -702,7 +704,7 @@
         <span class="pill">Open Source</span>
         <h2>Public <span>Repositories</span></h2>
         <p style="margin-top:.75rem; max-width:480px; margin-left:auto; margin-right:auto;">
-          Selected tooling and frameworks published from the ZOAK GitHub organisation.
+          Selected tooling and frameworks published from Organisation Service Management and markz0r on GitHub.
         </p>
       </div>
       <div id="reposLoading" aria-live="polite">
@@ -817,7 +819,7 @@
 
       <div class="tools-intro reveal">
         <span class="pill">Handy Tools</span>
-        <h3>Client-side Utility Bench</h3>
+        <h2>Client-side Utility Bench</h2>
         <p style="margin-top:.6rem; max-width:520px; margin-left:auto; margin-right:auto; color:var(--color-text-secondary);">
           Run lightweight, browser-based checks to inspect domains, headers, and performance without leaving the page.
         </p>
@@ -1130,50 +1132,112 @@
     const DEFAULT_LANG_COLOR = '#69747A';
     // Repos prefixed with 'zz-' are legacy/archived by naming convention in this org
     const LEGACY_REPO_PREFIX = 'zz-';
+    const EXCLUDED_REPO_NAMES = new Set(['.github']);
+    const EXCLUDED_REPO_SUFFIX = '.github.io';
+    const ROW_SIZE = 3;
+    const MAX_VISIBLE = ROW_SIZE * 2;
+    const ROTATE_INTERVAL = 6500;
+    const repoSources = [
+      'https://api.github.com/orgs/OrganisationServiceManagement/repos?type=public&sort=updated&per_page=20',
+      'https://api.github.com/users/markz0r/repos?type=public&sort=updated&per_page=20',
+    ];
     const reposGrid    = document.getElementById('reposGrid');
     const reposLoading = document.getElementById('reposLoading');
     const reposError   = document.getElementById('reposError');
 
-    fetch('https://api.github.com/orgs/zoak-solutions/repos?type=public&sort=updated&per_page=9')
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    const updateRepoCard = (card, repo) => {
+      const color = langColors[repo.language] || DEFAULT_LANG_COLOR;
+      card.innerHTML = `
+        <div class="repo-card-header">
+          <a href="${repo.html_url}" target="_blank" rel="noopener" class="repo-name">${repo.name}</a>
+          <div class="repo-lang">
+            <span class="lang-dot" style="background:${color}"></span>
+            ${repo.language || 'N/A'}
+          </div>
+        </div>
+        <p class="repo-desc">${repo.description || 'No description provided.'}</p>
+        <div class="repo-footer">
+          <span class="repo-stat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            ${repo.stargazers_count}
+          </span>
+          <span class="repo-stat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            ${repo.forks_count}
+          </span>
+          <span class="repo-stat" style="margin-left:auto;font-size:.75rem;">
+            ${new Date(repo.updated_at).toLocaleDateString('en-AU', {month:'short',year:'numeric'})}
+          </span>
+        </div>`;
+    };
+
+    const fetchRepos = (url) => fetch(url).then(r => r.ok ? r.json() : Promise.reject(r.status));
+
+    Promise.all(repoSources.map(fetchRepos))
+      .then(results => results.flat())
       .then(repos => {
         reposLoading.style.display = 'none';
-        const filtered = repos.filter(r => !r.archived && !r.fork && !r.name.startsWith(LEGACY_REPO_PREFIX));
+        const uniqueRepos = Array.from(new Map(repos.map(repo => [repo.id, repo])).values());
+        const filtered = uniqueRepos
+          .filter(r => !r.archived && !r.fork && !r.name.startsWith(LEGACY_REPO_PREFIX))
+          .filter(r => !EXCLUDED_REPO_NAMES.has(r.name) && !r.name.endsWith(EXCLUDED_REPO_SUFFIX))
+          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         if (!filtered.length) { reposError.textContent = 'No public repositories found.'; reposError.style.display = ''; return; }
-        filtered.forEach((repo, i) => {
-          const delay = ['', 'reveal-delay-1', 'reveal-delay-2'][i % 3];
-          const color = langColors[repo.language] || DEFAULT_LANG_COLOR;
+
+        reposGrid.innerHTML = '';
+        const visibleCount = Math.min(MAX_VISIBLE, filtered.length);
+        const delayClasses = ['', 'reveal-delay-1', 'reveal-delay-2'];
+        const cards = [];
+        for (let i = 0; i < visibleCount; i += 1) {
           const card = document.createElement('div');
-          card.className = `repo-card reveal ${delay}`;
-          card.innerHTML = `
-            <div class="repo-card-header">
-              <a href="${repo.html_url}" target="_blank" rel="noopener" class="repo-name">${repo.name}</a>
-              <div class="repo-lang">
-                <span class="lang-dot" style="background:${color}"></span>
-                ${repo.language || 'N/A'}
-              </div>
-            </div>
-            <p class="repo-desc">${repo.description || 'No description provided.'}</p>
-            <div class="repo-footer">
-              <span class="repo-stat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                ${repo.stargazers_count}
-              </span>
-              <span class="repo-stat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-                ${repo.forks_count}
-              </span>
-              <span class="repo-stat" style="margin-left:auto;font-size:.75rem;">
-                ${new Date(repo.updated_at).toLocaleDateString('en-AU', {month:'short',year:'numeric'})}
-              </span>
-            </div>`;
+          card.className = `repo-card reveal ${delayClasses[i % delayClasses.length]}`;
           reposGrid.appendChild(card);
+          cards.push(card);
           revealObs.observe(card);
+        }
+
+        const rowCards = [cards.slice(0, ROW_SIZE), cards.slice(ROW_SIZE, MAX_VISIBLE)];
+        const rowRepos = [filtered.slice(0, ROW_SIZE), filtered.slice(ROW_SIZE, MAX_VISIBLE)];
+        filtered.slice(MAX_VISIBLE).forEach((repo, idx) => {
+          rowRepos[idx % 2].push(repo);
         });
+
+        const rowOffsets = [0, 0];
+        // Row 0 shifts with a negative offset, row 1 shifts with a positive offset for alternating motion.
+        const getRotatedOffset = (currentOffset, rowIndex, length) => (
+          rowIndex === 0
+            ? (currentOffset - 1 + length) % length
+            : (currentOffset + 1) % length
+        );
+        const renderRow = (rowIndex) => {
+          const repos = rowRepos[rowIndex];
+          const slots = rowCards[rowIndex];
+          if (!repos.length || !slots.length) return;
+          slots.forEach((card, idx) => {
+            const repo = repos[(rowOffsets[rowIndex] + idx) % repos.length];
+            updateRepoCard(card, repo);
+          });
+        };
+
+        renderRow(0);
+        renderRow(1);
+
+        const rowOverflowStates = rowRepos.map((repos, idx) => repos.length > rowCards[idx].length);
+        if (filtered.length > MAX_VISIBLE && rowOverflowStates.some(Boolean)) {
+          const rotationIntervalId = setInterval(() => {
+            [0, 1].forEach((rowIndex) => {
+              if (!rowOverflowStates[rowIndex]) return;
+              const repos = rowRepos[rowIndex];
+              rowOffsets[rowIndex] = getRotatedOffset(rowOffsets[rowIndex], rowIndex, repos.length);
+              renderRow(rowIndex);
+            });
+          }, ROTATE_INTERVAL);
+          window.addEventListener('pagehide', () => clearInterval(rotationIntervalId), { once: true });
+        }
       })
       .catch(() => {
         reposLoading.style.display = 'none';
-        reposError.innerHTML = `<p>Could not load repositories. <a href="https://github.com/zoak-solutions" target="_blank" rel="noopener">View on GitHub →</a></p>`;
+        reposError.innerHTML = `<p>Could not load repositories. <a href="https://github.com/OrganisationServiceManagement" target="_blank" rel="noopener">OrganisationServiceManagement</a> · <a href="https://github.com/markz0r" target="_blank" rel="noopener">markz0r</a></p>`;
         reposError.style.display = '';
       });
 
