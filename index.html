@@ -704,7 +704,7 @@
         <span class="pill">Open Source</span>
         <h2>Public <span>Repositories</span></h2>
         <p style="margin-top:.75rem; max-width:480px; margin-left:auto; margin-right:auto;">
-          Selected tooling and frameworks published from OrganisationServiceManagement and markz0r on GitHub.
+          Selected tooling and frameworks published from Organisation Service Management and markz0r on GitHub.
         </p>
       </div>
       <div id="reposLoading" aria-live="polite">
@@ -1138,8 +1138,8 @@
     const MAX_VISIBLE = ROW_SIZE * 2;
     const ROTATE_INTERVAL = 6500;
     const repoSources = [
-      'https://api.github.com/orgs/OrganisationServiceManagement/repos?type=public&sort=updated&per_page=30',
-      'https://api.github.com/users/markz0r/repos?type=public&sort=updated&per_page=30',
+      'https://api.github.com/orgs/OrganisationServiceManagement/repos?type=public&sort=updated&per_page=20',
+      'https://api.github.com/users/markz0r/repos?type=public&sort=updated&per_page=20',
     ];
     const reposGrid    = document.getElementById('reposGrid');
     const reposLoading = document.getElementById('reposLoading');
@@ -1222,7 +1222,7 @@
             [0, 1].forEach((rowIndex) => {
               if (!rowOverflowFlags[rowIndex]) return;
               const repos = rowRepos[rowIndex];
-              // Row 0 moves the last item forward (clockwise), row 1 moves the first item back (counterclockwise).
+              // Row 0 shifts right (moves last item forward), row 1 shifts left (moves first item back).
               rowOffsets[rowIndex] = rowIndex === 0
                 ? (rowOffsets[rowIndex] - 1 + repos.length) % repos.length
                 : (rowOffsets[rowIndex] + 1) % repos.length;
