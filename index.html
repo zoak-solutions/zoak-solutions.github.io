@@ -1222,7 +1222,7 @@
             [0, 1].forEach((rowIndex) => {
               if (!rowOverflowFlags[rowIndex]) return;
               const repos = rowRepos[rowIndex];
-              // Row 0 shifts right (clockwise), row 1 shifts left (counterclockwise).
+              // Row 0 moves the last item forward (clockwise), row 1 moves the first item back (counterclockwise).
               rowOffsets[rowIndex] = rowIndex === 0
                 ? (rowOffsets[rowIndex] - 1 + repos.length) % repos.length
                 : (rowOffsets[rowIndex] + 1) % repos.length;
