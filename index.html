@@ -334,21 +334,42 @@
 
     /* ─── Our Story ───────────────────────────────────────────────────── */
     #story { background: var(--color-surface); }
-    .story-frame {
-      position: relative; padding: 4px; border-radius: var(--radius);
-      background: linear-gradient(135deg, rgba(215,136,29,.55), rgba(249,220,6,.45), rgba(91,192,235,.35));
-      background-size: 200% 200%; animation: story-glow 10s ease infinite; box-shadow: var(--shadow-lg);
+    .story-section .eyebrow {
+      display: inline-block; padding: .25rem .75rem; border-radius: 99px;
+      font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(215,136,29,.12); color: var(--color-primary); margin-bottom: .75rem;
     }
-    .story-frame-inner {
-      position: relative; border-radius: calc(var(--radius) - 4px); overflow: hidden;
-      background: var(--color-card); border: 1px solid rgba(255,255,255,.06);
-      aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
+    .story-section .section-lead {
+      max-width: 860px; margin: .75rem auto 0; font-size: 1.02rem; line-height: 1.75;
     }
-    .story-frame img { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--color-card); }
-    @keyframes story-glow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .story-intro {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem;
+      margin: 0 auto 2.5rem; align-items: start;
+    }
+    .story-intro p { line-height: 1.8; }
+    .story-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .story-card {
+      background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius);
+      padding: 1.5rem; box-shadow: var(--shadow-sm);
+    }
+    .story-card h3 { margin-bottom: .75rem; color: var(--color-text-primary); }
+    .story-content { max-width: 900px; margin: 0 auto; }
+    .story-content h3 { margin: 2.5rem 0 1rem; }
+    .story-content p { line-height: 1.8; }
+    .story-content > p + p { margin-top: 1rem; }
+    .story-list { display: grid; gap: .75rem; padding-left: 1.25rem; }
+    .story-list li { color: var(--color-text-secondary); }
+    .story-engagement {
+      margin-top: 1.25rem; padding: 1.25rem 1.5rem; background: var(--color-card);
+      border: 1px solid var(--color-border); border-left: 3px solid var(--color-primary);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+    .story-engagement h4 { margin-bottom: .5rem; }
+    @media (max-width: 768px) {
+      .story-intro { grid-template-columns: 1fr; }
     }
 
     /* ─── Handy tools ─────────────────────────────────────────────────── */
@@ -608,24 +629,137 @@
   </section>
 
   <!-- ─── Our Story ──────────────────────────────────────────────────────── -->
-  <section id="story" class="section">
+  <section id="story" class="section story-section">
     <div class="container">
       <div class="section-title reveal">
-        <span class="pill">Our Story</span>
-        <h2>The ZOAK <span>Journey</span></h2>
-        <p style="margin-top:.75rem; max-width:560px; margin-left:auto; margin-right:auto;">
-          From boutique security engineering to trusted strategic partner — explore the milestones that shaped ZOAK Solutions.
+        <p class="eyebrow">Our Story</p>
+        <h2>The ZOAK Journey</h2>
+        <p class="section-lead">
+          Since 2013, ZOAK Solutions has designed, built, operated, and secured mission-critical
+          internet and cloud systems for government, regulators, and security-sensitive organisations.
+          Our history is grounded in deep operational experience from Australia’s internet infrastructure
+          sector and shaped by a practical belief: technology should be secure, resilient, fit for purpose,
+          and aligned to real business outcomes.
         </p>
       </div>
-      <div class="story-frame reveal">
-        <div class="story-frame-inner">
-          <img src="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png"
-               alt="ZOAK Solutions timeline" loading="lazy" width="1600" height="900" />
-        </div>
+
+      <div class="story-intro reveal">
+        <p>
+          ZOAK was originally formed as the consulting arm of AusRegistry Group to bring to market
+          the expertise developed while building and operating large-scale registry and internet-facing
+          systems, including the .au domain name registry. Over time, the business evolved into a
+          specialist provider of cyber security services, cloud services, managed technology services,
+          custom software development, CISO as a Service, and outsourced application hosting.
+        </p>
+        <p>
+          Today, ZOAK remains focused on securing and operating critical systems to demanding
+          standards, including ISO 27001 and the Australian Government ASD Information Security
+          Manual. Our approach is hands-on, agile, and outcome-driven — combining strategic guidance
+          with engineering depth and operational accountability.
+        </p>
       </div>
-      <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
-        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener noreferrer">Open the timeline →</a>
-      </p>
+
+      <div class="story-grid reveal">
+        <article class="story-card">
+          <h3>2013</h3>
+          <p>
+            ZOAK Solutions begins operations, drawing on the experience of teams who helped design,
+            build, operate, and secure core Australian internet infrastructure.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Registry &amp; Critical Infrastructure Heritage</h3>
+          <p>
+            Our roots include work associated with the .au domain name registry, secure online
+            government platforms, and other high-availability services where integrity, resilience, and
+            trust are non-negotiable.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Security-Led Expansion</h3>
+          <p>
+            ZOAK expands into cyber security, cloud, managed services, and application development,
+            bringing together advisory capability and practical implementation for regulated and
+            security-sensitive environments.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Today</h3>
+          <p>
+            ZOAK continues to support clients that rely on robust governance, secure architecture,
+            disciplined operations, and long-term technology partnerships.
+          </p>
+        </article>
+      </div>
+
+      <div class="story-content reveal">
+        <h3>What defines ZOAK</h3>
+        <ul class="story-list">
+          <li>Deep experience in mission-critical internet and cloud systems</li>
+          <li>Strong alignment to ISO 27001 and ASD ISM security practices</li>
+          <li>Practical, fit-for-purpose engineering without unnecessary complexity</li>
+          <li>Ability to bridge strategy, compliance, engineering, and operations</li>
+          <li>Long-term partnerships with government, regulators, and technology-led organisations</li>
+        </ul>
+
+        <h3>Selected experience</h3>
+
+        <article class="story-engagement">
+          <h4>Australian Communications and Media Authority (ACMA)</h4>
+          <p>
+            ZOAK designs, builds, operates, and secures the Numbering Management system that supports
+            Australia’s telephone numbering framework. The platform enables allocation and management
+            of telephone number blocks and smart numbers, maintains numbering registers, and supports
+            regulated transaction processing in a high-assurance Commonwealth environment.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>Connexion Mobility Ltd</h4>
+          <p>
+            ZOAK provides strategic and hands-on cyber security services to Connexion, combining
+            outsourced security leadership with technical implementation. This work includes ISMS
+            governance, audit and certification support, risk management, security operations, endpoint
+            and control uplift, and broader security improvement activities for an ASX-listed technology
+            business.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>auDA and .au ecosystem experience</h4>
+          <p>
+            ZOAK has delivered advisory, monitoring, cloud, and security services in support of the
+            .au domain name ecosystem, including registry transition support, DNS and DNSSEC-related
+            advisory work, secure data environments, compliance uplift, and independent monitoring
+            capabilities.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>Whole-of-government DNS and other critical services</h4>
+          <p>
+            Across government and regulated sectors, ZOAK has contributed to secure DNS, operational
+            resilience, cloud hosting, and cyber security outcomes where uptime, control assurance,
+            and evidence-based governance are essential.
+          </p>
+        </article>
+
+        <h3>How we work</h3>
+        <p>
+          We believe strong outcomes come from combining technical depth with clear accountability.
+          That means using lightweight and agile delivery methods where appropriate, maintaining
+          disciplined risk and security practices, and staying close to client objectives from design
+          through to operations.
+        </p>
+        <p>
+          ZOAK’s history is not defined by a single product or market. It is defined by repeatedly
+          solving difficult technology, security, and operational problems for organisations that cannot
+          afford failure.
+        </p>
+      </div>
     </div>
   </section>
 
