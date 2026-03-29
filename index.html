@@ -334,21 +334,59 @@
 
     /* ─── Our Story ───────────────────────────────────────────────────── */
     #story { background: var(--color-surface); }
-    .story-frame {
-      position: relative; padding: 4px; border-radius: var(--radius);
-      background: linear-gradient(135deg, rgba(215,136,29,.55), rgba(249,220,6,.45), rgba(91,192,235,.35));
-      background-size: 200% 200%; animation: story-glow 10s ease infinite; box-shadow: var(--shadow-lg);
+    .story-section .eyebrow {
+      display: inline-block; padding: .25rem .75rem; border-radius: 99px;
+      font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(215,136,29,.12); color: var(--color-primary); margin-bottom: .75rem;
     }
-    .story-frame-inner {
-      position: relative; border-radius: calc(var(--radius) - 4px); overflow: hidden;
-      background: var(--color-card); border: 1px solid rgba(255,255,255,.06);
-      aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
+    .story-section .section-lead {
+      max-width: 860px; margin: .75rem auto 0; font-size: 1.02rem; line-height: 1.75;
     }
-    .story-frame img { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--color-card); }
-    @keyframes story-glow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .story-intro {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem;
+      margin: 0 auto 2.5rem; align-items: start;
+    }
+    .story-intro p { line-height: 1.8; }
+    .story-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .story-card {
+      background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius);
+      padding: 1.5rem; box-shadow: var(--shadow-sm);
+    }
+    .story-card h3 { margin-bottom: .75rem; color: var(--color-text-primary); }
+    .story-content { max-width: 900px; margin: 0 auto; }
+    .story-content h3 { margin: 2.5rem 0 1rem; }
+    .story-content p { line-height: 1.8; }
+    .story-content > p + p { margin-top: 1rem; }
+    .story-list { display: grid; gap: .75rem; padding-left: 1.25rem; }
+    .story-list li { color: var(--color-text-secondary); }
+    .story-accordion { display: grid; gap: 1rem; margin-top: 1.5rem; }
+    .story-detail {
+      background: var(--color-card); border: 1px solid #f9dc06; border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .story-detail summary {
+      display: flex; flex-direction: column; gap: .35rem; padding: 1.25rem 1.5rem; cursor: pointer;
+      list-style: none;
+    }
+    .story-detail summary::-webkit-details-marker { display: none; }
+    .story-detail-title { color: var(--color-text-primary); font-weight: 700; }
+    .story-detail-meta { color: var(--color-accent); font-size: .9rem; }
+    .story-detail-body {
+      padding: 0 1.5rem 1.5rem; border-top: 1px solid #f9dc06;
+    }
+    .story-detail-body > :first-child { margin-top: 1.25rem; }
+    .story-detail-body > p + p { margin-top: 1rem; }
+    .story-engagement {
+      margin-top: 1.25rem; padding: 1.25rem 1.5rem; background: var(--color-card);
+      border: 1px solid var(--color-border); border-left: 3px solid var(--color-primary);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+    .story-engagement h4 { margin-bottom: .5rem; }
+    @media (max-width: 768px) {
+      .story-intro { grid-template-columns: 1fr; }
     }
 
     /* ─── Handy tools ─────────────────────────────────────────────────── */
@@ -416,6 +454,18 @@
     }
     .info-key { font-weight: 600; color: var(--color-text-primary); }
     .info-value { color: var(--color-text-secondary); text-align: right; flex: 1 1 200px; word-break: break-word; white-space: pre-wrap; }
+    .info-value-json { text-align: left; flex-basis: 100%; }
+    .info-json {
+      margin: 0; padding: .9rem 1rem; border: 1px solid var(--color-border); border-radius: 10px;
+      background: var(--color-surface); color: var(--color-text-secondary); text-align: left;
+      white-space: pre-wrap; overflow-x: auto; font-size: .82rem; line-height: 1.6;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    .info-json-key { color: var(--color-secondary); }
+    .info-json-string { color: #7dd3fc; }
+    .info-json-number { color: #fca5a5; }
+    .info-json-boolean { color: #86efac; }
+    .info-json-null { color: var(--color-accent); }
     body.info-open { overflow: hidden; }
 
     /* ─── Contact ──────────────────────────────────────────────────────── */
@@ -608,24 +658,325 @@
   </section>
 
   <!-- ─── Our Story ──────────────────────────────────────────────────────── -->
-  <section id="story" class="section">
+  <section id="story" class="section story-section">
     <div class="container">
       <div class="section-title reveal">
-        <span class="pill">Our Story</span>
-        <h2>The ZOAK <span>Journey</span></h2>
-        <p style="margin-top:.75rem; max-width:560px; margin-left:auto; margin-right:auto;">
-          From boutique security engineering to trusted strategic partner — explore the milestones that shaped ZOAK Solutions.
+        <p class="eyebrow">Our Story</p>
+        <h2>The ZOAK Journey</h2>
+        <p class="section-lead">
+          Since 2013, ZOAK Solutions has designed, built, operated, and secured mission-critical
+          internet and cloud systems for government, regulators, and security-sensitive organisations.
+          Our history is grounded in deep operational experience from Australia’s internet infrastructure
+          sector and shaped by a practical belief: technology should be secure, resilient, fit for purpose,
+          and aligned to real business outcomes.
         </p>
       </div>
-      <div class="story-frame reveal">
-        <div class="story-frame-inner">
-          <img src="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png"
-               alt="ZOAK Solutions timeline" loading="lazy" width="1600" height="900" />
-        </div>
+
+      <div class="story-intro reveal">
+        <p>
+          ZOAK was originally formed as the consulting arm of AusRegistry Group to bring to market
+          the expertise developed while building and operating large-scale registry and internet-facing
+          systems, including the .au domain name registry. Over time, the business evolved into a
+          specialist provider of cyber security services, cloud services, managed technology services,
+          custom software development, CISO as a Service, and outsourced application hosting.
+        </p>
+        <p>
+          Today, ZOAK remains focused on securing and operating critical systems to demanding
+          standards, including ISO 27001 and the Australian Government ASD Information Security
+          Manual. Our approach is hands-on, agile, and outcome-driven — combining strategic guidance
+          with engineering depth and operational accountability.
+        </p>
       </div>
-      <p style="text-align:center;margin-top:1rem;color:var(--color-accent);font-size:.8rem;">
-        Prefer full screen? <a href="https://zoak-public-asset.s3.ap-southeast-2.amazonaws.com/brands/zoak/upload/ZOAK_Timeline.png" target="_blank" rel="noopener noreferrer">Open the timeline →</a>
-      </p>
+
+      <div class="story-grid reveal">
+        <article class="story-card">
+          <h3>Since 2013</h3>
+          <p>
+            ZOAK Solutions has been operating since 2013, building on deep experience in designing,
+            delivering, operating, and securing essential Australian digital infrastructure.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Mission Critical Systems</h3>
+          <p>
+            Our heritage includes work on the .au domain name registry, secure government platforms,
+            and other high-availability services where resilience, integrity, and continuity are
+            fundamental.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Security First</h3>
+          <p>
+            Security has always been central to how we work, shaping our approach across cyber
+            security, cloud, managed services, and application delivery for regulated and
+            security-sensitive clients.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <h3>Track Record</h3>
+          <p>
+            We bring a proven track record of supporting organisations that depend on strong
+            governance, secure architecture, disciplined operations, and long-term technology
+            partnerships.
+          </p>
+        </article>
+      </div>
+
+      <div class="story-content reveal">
+        <h3>What defines ZOAK</h3>
+        <ul class="story-list">
+          <li>Deep experience in mission-critical internet and cloud systems</li>
+          <li>Strong alignment to ISO 27001 and ASD ISM security practices</li>
+          <li>Practical, fit-for-purpose engineering without unnecessary complexity</li>
+          <li>Ability to bridge strategy, compliance, engineering, and operations</li>
+          <li>Long-term partnerships with government, regulators, and technology-led organisations</li>
+        </ul>
+
+        <h3>Selected experience</h3>
+
+        <article class="story-engagement">
+          <h4>Australian Communications and Media Authority (ACMA)</h4>
+          <p>
+            ZOAK designs, builds, operates, and secures the Numbering Management system that supports
+            Australia’s telephone numbering framework. The platform enables allocation and management
+            of telephone number blocks and smart numbers, maintains numbering registers, and supports
+            regulated transaction processing in a high-assurance Commonwealth environment.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>Connexion Mobility Ltd</h4>
+          <p>
+            ZOAK provides strategic and hands-on cyber security services to Connexion, combining
+            outsourced security leadership with technical implementation. This work includes ISMS
+            governance, audit and certification support, risk management, security operations, endpoint
+            and control uplift, and broader security improvement activities for an ASX-listed technology
+            business.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>auDA and .au ecosystem experience</h4>
+          <p>
+            ZOAK has delivered advisory, monitoring, cloud, and security services in support of the
+            .au domain name ecosystem, including registry transition support, DNS and DNSSEC-related
+            advisory work, secure data environments, compliance uplift, and independent monitoring
+            capabilities.
+          </p>
+        </article>
+
+        <article class="story-engagement">
+          <h4>Whole-of-government DNS and other critical services</h4>
+          <p>
+            Across government and regulated sectors, ZOAK has contributed to secure DNS, operational
+            resilience, cloud hosting, and cyber security outcomes where uptime, control assurance,
+            and evidence-based governance are essential.
+          </p>
+        </article>
+
+        <h3>Tenders won</h3>
+        <p>
+          ZOAK has a strong record of winning and delivering public sector tenders involving
+          regulated platforms, critical digital infrastructure, software delivery, cyber security,
+          cloud operations, and managed services. These engagements reflect our ability to
+          compete successfully for complex government work and then sustain those services over
+          the long term.
+        </p>
+
+        <div class="story-accordion">
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Australian Communications and Media Authority (ACMA)</span>
+              <span class="story-detail-meta">Provision of Numbering Services · Open tender · 2014 – current</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK won the tender to provide Australia’s Numbering Services capability for the
+                Australian Communications and Media Authority. This remains one of ZOAK’s most
+                significant and enduring government engagements.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Provision of Numbering Services</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 11 September 2014</li>
+                <li><strong>Current published end date:</strong> 2 August 2027</li>
+                <li><strong>Published contract value:</strong> AUD 14,075,880.30</li>
+                <li><strong>Agency reference:</strong> CON/ACMA/14ACMA277/2</li>
+              </ul>
+              <p>
+                The engagement covers the design, build, operation, support, and ongoing governance
+                of a regulator-grade numbering services platform used by ACMA to administer
+                Australia’s telephone numbering framework. The service includes public-facing and
+                carrier-facing systems, numbering registers, charge-processing support, reporting,
+                security, governance, and operational continuity.
+              </p>
+              <p>
+                This work demonstrates ZOAK’s ability to deliver and sustain a high-assurance
+                Commonwealth service involving statutory processes, public registers, transaction
+                workflows, records management, privacy, security, and long-term operational support.
+              </p>
+            </div>
+          </details>
+
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Clean Energy Regulator</span>
+              <span class="story-detail-meta">Renewable Energy Certificate (REC) Registry Rebuild, Hosting · Open tender · 2012 – 2017</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK won and delivered the Renewable Energy Certificate Registry rebuild and hosting
+                engagement for the Clean Energy Regulator. This was a major government platform
+                delivery and operational services contract in a highly regulated environment.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Renewable Energy Certificate (REC) Registry Rebuild, Hosting</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 1 July 2012</li>
+                <li><strong>Published end date:</strong> 31 May 2017</li>
+                <li><strong>Published contract value:</strong> AUD 14,812,614.27</li>
+                <li><strong>Agency reference:</strong> STD-000768-0</li>
+                <li><strong>ATM reference:</strong> ORER 011/2012</li>
+              </ul>
+              <p>
+                The platform supported the allocation, management, and trading of renewable energy
+                certificates in a government setting that required secure operation, strong
+                transactional integrity, and reliable long-term service delivery.
+              </p>
+              <p>
+                This engagement is a strong example of ZOAK’s capability to deliver large, complex,
+                business-critical digital systems where the platform itself is central to regulatory
+                administration and market operations.
+              </p>
+            </div>
+          </details>
+
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Department of Finance</span>
+              <span class="story-detail-meta">Digital services · Open tender · 2021 – 2023</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK won a digital services engagement with the Department of Finance, providing
+                software support and related digital delivery services in a Commonwealth environment.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Digital services</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 1 October 2021</li>
+                <li><strong>Published end date:</strong> 3 July 2023</li>
+                <li><strong>Published contract value:</strong> AUD 3,974,778.85</li>
+                <li><strong>Agency reference:</strong> 4400051434</li>
+                <li><strong>ATM reference:</strong> DTA-487 V4</li>
+              </ul>
+              <p>
+                This engagement reflects ZOAK’s capability to provide dependable digital service
+                delivery in government contexts where supportability, responsiveness, and structured
+                service management are essential.
+              </p>
+            </div>
+          </details>
+
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Digital Transformation Agency (DTA)</span>
+              <span class="story-detail-meta">Domain Name Administration Portal · Open tender · 2019 – 2021</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK won the tender to deliver the Domain Name Administration Portal for the Digital
+                Transformation Agency, supporting secure Australian Government domain name
+                administration workflows.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Domain Name Administration Portal</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 4 November 2019</li>
+                <li><strong>Published end date:</strong> 3 October 2021</li>
+                <li><strong>Published contract value:</strong> AUD 2,681,652.64</li>
+                <li><strong>Agency reference:</strong> DTA-GEN-265</li>
+                <li><strong>SON reference:</strong> SON3413842</li>
+              </ul>
+              <p>
+                This engagement demonstrates ZOAK’s ability to deliver secure digital platforms tied
+                to government identity, naming, operational governance, and service continuity.
+              </p>
+            </div>
+          </details>
+
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Digital Transformation Agency (DTA)</span>
+              <span class="story-detail-meta">Australian Government domain name management — security and software advice · Open tender · 2018 – 2019</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK was engaged by the Digital Transformation Agency to provide security and
+                software advice relating to Australian Government domain name management.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Australian Government domain name management – security and software advice</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 15 October 2018</li>
+                <li><strong>Published end date:</strong> 18 March 2019</li>
+                <li><strong>Published contract value:</strong> AUD 68,255.00</li>
+                <li><strong>Agency reference:</strong> DTA-GEN-158</li>
+                <li><strong>SON reference:</strong> SON3413842</li>
+              </ul>
+              <p>
+                Although smaller in value, this engagement is relevant because it highlights ZOAK’s
+                recognised expertise in secure domain name administration, internet infrastructure,
+                and advisory work in government settings.
+              </p>
+            </div>
+          </details>
+
+          <details class="story-detail">
+            <summary>
+              <span class="story-detail-title">Digital Transformation Agency (DTA)</span>
+              <span class="story-detail-meta">GovDNS architecture and viability advice · Open tender · 2019</span>
+            </summary>
+            <div class="story-detail-body">
+              <p>
+                ZOAK was engaged to provide advice on the potential architecture and viability of
+                GovDNS, contributing specialist expertise in DNS, security, and government digital
+                service design.
+              </p>
+              <ul class="story-list">
+                <li><strong>Service:</strong> Advice in relation to the potential architecture and viability of GovDNS</li>
+                <li><strong>Procurement method:</strong> Open tender</li>
+                <li><strong>Initial start:</strong> 14 June 2019</li>
+                <li><strong>Published end date:</strong> 28 June 2019</li>
+                <li><strong>Published contract value:</strong> AUD 16,610.00</li>
+                <li><strong>Agency reference:</strong> DTA-GEN-243</li>
+                <li><strong>SON reference:</strong> SON3413842</li>
+              </ul>
+              <p>
+                This engagement reinforces ZOAK’s long-standing specialisation in DNS, naming
+                systems, internet infrastructure, and the secure operation of nationally significant
+                digital services.
+              </p>
+            </div>
+          </details>
+        </div>
+
+        <h3>How we work</h3>
+        <p>
+          We believe strong outcomes come from combining technical depth with clear accountability.
+          That means using lightweight and agile delivery methods where appropriate, maintaining
+          disciplined risk and security practices, and staying close to client objectives from design
+          through to operations.
+        </p>
+        <p>
+          ZOAK’s history is not defined by a single product or market. It is defined by repeatedly
+          solving difficult technology, security, and operational problems for organisations that cannot
+          afford failure.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -1016,7 +1367,7 @@
       </p>
       <ul id="infoList" class="info-list"></ul>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.75rem;">
-        <button id="ipEnrichBtn" class="tool-btn" type="button">Fetch public IP</button>
+        <button id="ipEnrichBtn" class="tool-btn" type="button">Refresh public IP</button>
         <span class="tool-meta">Uses ipapi.co (may log request metadata).</span>
       </div>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
@@ -1478,7 +1829,7 @@
       { name: "GitHub", url: "https://github.com", logo: "https://github.com/favicon.ico" },
       { name: "PowerShell", url: "https://github.com/PowerShell/PowerShell", logo: ghLogo("PowerShell") },
       { name: "Go", url: "https://github.com/golang/go", logo: ghLogo("golang") },
-      { name: "Bash", url: "https://github.com/bminor/bash", logo: ghLogo("bminor") },
+      { name: "zsh", url: "https://github.com/zsh-users", logo: "https://avatars.githubusercontent.com/u/567410?s=32&v=4" },
 
       // Editor / Terminal workflow
       { name: "Neovim", url: "https://github.com/neovim/neovim", logo: ghLogo("neovim") },
@@ -1498,7 +1849,7 @@
       { name: "ISO/IEC 27001", url: "https://www.iso.org/standard/27001", logo: shieldLogo },
       { name: "ASD ISM", url: "https://www.cyber.gov.au/business-government/asds-cyber-security-frameworks/ism", logo: shieldLogo },
 
-      { name: "OSM", url: "https://www.osm.dev", logo: "https://raw.githubusercontent.com/OrganisationServiceManagement/OrganisationServiceManagement.github.io/refs/heads/main/favicon.ico" },
+      { name: "OSM", url: "https://osm.dev", logo: "https://raw.githubusercontent.com/OrganisationServiceManagement/OrganisationServiceManagement.github.io/refs/heads/main/favicon.ico" },
     ];
     const tsEl = document.getElementById('techStack');
     stack.forEach((item, i) => {
@@ -1796,6 +2147,7 @@
     const ipEnrichBtn = document.getElementById('ipEnrichBtn');
     const infoData = {};
     let ipLookupFailed = false;
+    let ipLookupPromise = null;
 
     const formatValue = (value) => {
       if (Array.isArray(value)) return value.join(', ');
@@ -1804,15 +2156,45 @@
       if (typeof value === 'object') return formatJson(value);
       return String(value);
     };
-    const addInfoItem = (label, value) => {
+    // Match JSON keys, string values, booleans, nulls, and numbers for lightweight syntax highlighting.
+    const infoJsonTokenPattern = /("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(?=\s*:)|("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g;
+    const renderJsonValue = (element, value) => {
+      const json = formatJson(value);
+      element.textContent = '';
+      let lastIndex = 0;
+      for (const match of json.matchAll(infoJsonTokenPattern)) {
+        const [token, key, stringValue, boolValue] = match;
+        const index = match.index ?? 0;
+        if (index > lastIndex) {
+          element.appendChild(document.createTextNode(json.slice(lastIndex, index)));
+        }
+        const span = document.createElement('span');
+        if (key) span.className = 'info-json-key';
+        else if (stringValue) span.className = 'info-json-string';
+        else if (boolValue) span.className = 'info-json-boolean';
+        else if (token === 'null') span.className = 'info-json-null';
+        else span.className = 'info-json-number';
+        span.textContent = token;
+        element.appendChild(span);
+        lastIndex = index + token.length;
+      }
+      if (lastIndex < json.length) {
+        element.appendChild(document.createTextNode(json.slice(lastIndex)));
+      }
+    };
+    const addInfoItem = (label, value, options = {}) => {
       const li = document.createElement('li');
       li.className = 'info-item';
       const key = document.createElement('span');
       key.className = 'info-key';
       key.textContent = label;
-      const val = document.createElement('span');
-      val.className = 'info-value';
-      val.textContent = formatValue(value);
+      const val = document.createElement(options.json ? 'pre' : 'span');
+      val.className = options.json ? 'info-value info-value-json info-json' : 'info-value';
+      if (options.json) {
+        renderJsonValue(val, value);
+      } else {
+        val.textContent = formatValue(value);
+      }
       li.appendChild(key);
       li.appendChild(val);
       infoList.appendChild(li);
@@ -1821,6 +2203,7 @@
     const renderInfoList = () => {
       infoList.innerHTML = '';
       addInfoItem('User agent', infoData.userAgent);
+      if (infoData.sourceIp) addInfoItem('Source IP', infoData.sourceIp);
       addInfoItem('Platform', infoData.platform);
       addInfoItem('Languages', infoData.languages);
       addInfoItem('Time zone', infoData.timezone);
@@ -1831,13 +2214,13 @@
       addInfoItem('Do Not Track (legacy)', infoData.doNotTrack);
       addInfoItem('Global Privacy Control', infoData.globalPrivacyControl);
       addInfoItem('Referrer', infoData.referrer);
-      if (infoData.connection) addInfoItem('Network hints', infoData.connection);
-      if (infoData.uaHints) addInfoItem('User-Agent hints', infoData.uaHints);
+      if (infoData.connection) addInfoItem('Network hints', infoData.connection, { json: true });
+      if (infoData.uaHints) addInfoItem('User-Agent hints', infoData.uaHints, { json: true });
       if (infoData.publicIp) {
         addInfoItem('Public IP', infoData.publicIp);
-        addInfoItem('Network / ASN', infoData.network);
         const location = [infoData.city, infoData.region, infoData.country].filter(Boolean).join(', ');
-        addInfoItem('Approx. location', location || 'Unavailable');
+        if (infoData.network) addInfoItem('Network / ASN', infoData.network);
+        if (location) addInfoItem('Approx. location', location);
       } else if (ipLookupFailed) {
         addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
       }
@@ -1882,9 +2265,11 @@
       renderInfoList();
       infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString()}.`;
       infoFab.classList.add('visible');
+      fetchIpInfo();
     };
 
     const fetchIpInfo = async () => {
+      if (ipLookupPromise) return ipLookupPromise;
       ipLookupFailed = false;
       ipEnrichBtn.disabled = true;
       const originalLabel = ipEnrichBtn.textContent;
@@ -1892,33 +2277,50 @@
       ipEnrichBtn.setAttribute('aria-busy', 'true');
       ipEnrichBtn.setAttribute('aria-disabled', 'true');
       infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
-      try {
-        const res = await fetchWithTimeout('https://ipapi.co/json/');
-        if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
-        const data = await res.json();
-        if (!data || typeof data !== 'object' || !data.ip) {
-          throw new Error('IP lookup failed (missing IP field)');
+      ipLookupPromise = (async () => {
+        try {
+          const res = await fetchWithTimeout('https://ipapi.co/json/', {
+            headers: {
+              Accept: 'application/json',
+            },
+          });
+          if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
+          const data = await res.json();
+          if (!data || typeof data !== 'object' || !data.ip) {
+            throw new Error('IP lookup failed (missing IP field)');
+          }
+          Object.assign(infoData, {
+            publicIp: data.ip,
+            network: data.org || data.asn,
+            city: data.city || undefined,
+            region: data.region || undefined,
+            country: data.country_name || data.country_code || undefined,
+          });
+        } catch (err) {
+          ipLookupFailed = true;
+          Object.assign(infoData, {
+            publicIp: undefined,
+            network: undefined,
+            city: undefined,
+            region: undefined,
+            country: undefined,
+          });
+          infoStatus.textContent = err?.message === 'Failed to fetch'
+            ? 'Public IP lookup unavailable.'
+            : (err?.message || 'Public IP lookup unavailable.');
+        } finally {
+          renderInfoList();
+          if (!ipLookupFailed) {
+            infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
+          }
+          ipEnrichBtn.disabled = false;
+          ipEnrichBtn.textContent = originalLabel;
+          ipEnrichBtn.removeAttribute('aria-busy');
+          ipEnrichBtn.removeAttribute('aria-disabled');
+          ipLookupPromise = null;
         }
-        Object.assign(infoData, {
-          publicIp: data.ip,
-          network: data.org,
-          city: data.city,
-          region: data.region,
-          country: data.country_name,
-        });
-      } catch (err) {
-        ipLookupFailed = true;
-        infoStatus.textContent = err?.message || 'Public IP lookup unavailable.';
-      } finally {
-        renderInfoList();
-        if (!ipLookupFailed) {
-          infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
-        }
-        ipEnrichBtn.disabled = false;
-        ipEnrichBtn.textContent = originalLabel;
-        ipEnrichBtn.removeAttribute('aria-busy');
-        ipEnrichBtn.removeAttribute('aria-disabled');
-      }
+      })();
+      return ipLookupPromise;
     };
 
     const openInfoPanel = () => {
