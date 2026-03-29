@@ -2203,7 +2203,7 @@
     const renderInfoList = () => {
       infoList.innerHTML = '';
       addInfoItem('User agent', infoData.userAgent);
-      addInfoItem('sourceIP', infoData.sourceIP || infoData.publicIp || 'Unavailable');
+      addInfoItem('sourceIP', infoData.sourceIp || infoData.publicIp || 'Unavailable');
       addInfoItem('Platform', infoData.platform);
       addInfoItem('Languages', infoData.languages);
       addInfoItem('Time zone', infoData.timezone);
@@ -2291,9 +2291,11 @@
           }
           Object.assign(infoData, {
             publicIp: data.ip,
-            sourceIP: data.forwarded || data.ip,
-            network: data.host || infoData.network,
-            country: data.country_code || infoData.country,
+            sourceIp: data.forwarded || data.ip,
+            network: data.host || undefined,
+            city: undefined,
+            region: undefined,
+            country: data.country_code || undefined,
           });
         } catch (err) {
           ipLookupFailed = true;
