@@ -1363,12 +1363,12 @@
       </div>
       <p style="margin-top:.75rem;color:var(--color-text-secondary);">
         This snapshot highlights data automatically shared with a simple website, including device hints and public metadata.
-        Public IP enrichment uses ipapi.co (which may log request metadata).
+        Public IP enrichment uses ifconfig.io (which may log request metadata).
       </p>
       <ul id="infoList" class="info-list"></ul>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.75rem;">
-        <button id="ipEnrichBtn" class="tool-btn" type="button">Fetch public IP</button>
-        <span class="tool-meta">Uses ipapi.co (may log request metadata).</span>
+        <button id="ipEnrichBtn" class="tool-btn" type="button">Refresh public IP</button>
+        <span class="tool-meta">Uses ifconfig.io (may log request metadata).</span>
       </div>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
     </div>
@@ -2147,6 +2147,7 @@
     const ipEnrichBtn = document.getElementById('ipEnrichBtn');
     const infoData = {};
     let ipLookupFailed = false;
+    let ipLookupPromise = null;
 
     const formatValue = (value) => {
       if (Array.isArray(value)) return value.join(', ');
@@ -2217,11 +2218,11 @@
       if (infoData.uaHints) addInfoItem('User-Agent hints', infoData.uaHints, { json: true });
       if (infoData.publicIp) {
         addInfoItem('Public IP', infoData.publicIp);
-        addInfoItem('Network / ASN', infoData.network);
         const location = [infoData.city, infoData.region, infoData.country].filter(Boolean).join(', ');
-        addInfoItem('Approx. location', location || 'Unavailable');
+        if (infoData.network) addInfoItem('Network / ASN', infoData.network);
+        if (location) addInfoItem('Approx. location', location);
       } else if (ipLookupFailed) {
-        addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
+        addInfoItem('Public IP', 'Unavailable (ifconfig.io request failed)');
       }
     };
 
@@ -2264,44 +2265,54 @@
       renderInfoList();
       infoStatus.textContent = `Collected ${infoList.children.length} signals at ${new Date().toLocaleTimeString()}.`;
       infoFab.classList.add('visible');
+      fetchIpInfo();
     };
 
     const fetchIpInfo = async () => {
+      if (ipLookupPromise) return ipLookupPromise;
       ipLookupFailed = false;
       ipEnrichBtn.disabled = true;
       const originalLabel = ipEnrichBtn.textContent;
       ipEnrichBtn.textContent = 'Fetching…';
       ipEnrichBtn.setAttribute('aria-busy', 'true');
       ipEnrichBtn.setAttribute('aria-disabled', 'true');
-      infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
-      try {
-        const res = await fetchWithTimeout('https://ipapi.co/json/');
-        if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
-        const data = await res.json();
-        if (!data || typeof data !== 'object' || !data.ip) {
-          throw new Error('IP lookup failed (missing IP field)');
+      infoStatus.textContent = 'Fetching public IP details from ifconfig.io…';
+      ipLookupPromise = (async () => {
+        try {
+          const res = await fetchWithTimeout('https://ifconfig.io/all.json', {
+            headers: {
+              Accept: 'application/json',
+            },
+          });
+          if (!res.ok) throw new Error(`IP lookup failed (${res.status})`);
+          const data = await res.json();
+          if (!data || typeof data !== 'object' || !data.ip) {
+            throw new Error('IP lookup failed (missing IP field)');
+          }
+          Object.assign(infoData, {
+            publicIp: data.ip,
+            sourceIP: data.forwarded || data.ip,
+            network: data.host || infoData.network,
+            country: data.country_code || infoData.country,
+          });
+        } catch (err) {
+          ipLookupFailed = true;
+          infoStatus.textContent = err?.message === 'Failed to fetch'
+            ? 'Public IP lookup unavailable.'
+            : (err?.message || 'Public IP lookup unavailable.');
+        } finally {
+          renderInfoList();
+          if (!ipLookupFailed) {
+            infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
+          }
+          ipEnrichBtn.disabled = false;
+          ipEnrichBtn.textContent = originalLabel;
+          ipEnrichBtn.removeAttribute('aria-busy');
+          ipEnrichBtn.removeAttribute('aria-disabled');
+          ipLookupPromise = null;
         }
-        Object.assign(infoData, {
-          publicIp: data.ip,
-          sourceIP: data.ip,
-          network: data.org,
-          city: data.city,
-          region: data.region,
-          country: data.country_name,
-        });
-      } catch (err) {
-        ipLookupFailed = true;
-        infoStatus.textContent = err?.message || 'Public IP lookup unavailable.';
-      } finally {
-        renderInfoList();
-        if (!ipLookupFailed) {
-          infoStatus.textContent = `IP enrichment complete at ${new Date().toLocaleTimeString()}.`;
-        }
-        ipEnrichBtn.disabled = false;
-        ipEnrichBtn.textContent = originalLabel;
-        ipEnrichBtn.removeAttribute('aria-busy');
-        ipEnrichBtn.removeAttribute('aria-disabled');
-      }
+      })();
+      return ipLookupPromise;
     };
 
     const openInfoPanel = () => {
