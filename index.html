@@ -2155,12 +2155,13 @@
       if (typeof value === 'object') return formatJson(value);
       return String(value);
     };
+    // Match JSON keys, string values, booleans, nulls, and numbers for lightweight syntax highlighting.
+    const infoJsonTokenPattern = /("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(?=\s*:)|("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g;
     const renderJsonValue = (element, value) => {
       const json = formatJson(value);
-      const tokenPattern = /("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(?=\s*:)|("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g;
       element.textContent = '';
       let lastIndex = 0;
-      for (const match of json.matchAll(tokenPattern)) {
+      for (const match of json.matchAll(infoJsonTokenPattern)) {
         const [token, key, stringValue, boolValue] = match;
         const index = match.index ?? 0;
         if (index > lastIndex) {
