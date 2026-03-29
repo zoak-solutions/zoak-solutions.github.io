@@ -2155,15 +2155,30 @@
       if (typeof value === 'object') return formatJson(value);
       return String(value);
     };
-    const formatJsonHtml = (value) => {
-      const json = escapeHtml(formatJson(value));
-      return json.replace(/(&quot;(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\&]|&(?!quot;))*&quot;)(?=\s*:)|(&quot;(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\&]|&(?!quot;))*&quot;)|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g, (match, key, stringValue, boolValue) => {
-        if (key) return `<span class="info-json-key">${key}</span>`;
-        if (stringValue) return `<span class="info-json-string">${stringValue}</span>`;
-        if (boolValue) return `<span class="info-json-boolean">${match}</span>`;
-        if (match === 'null') return `<span class="info-json-null">${match}</span>`;
-        return `<span class="info-json-number">${match}</span>`;
-      });
+    const renderJsonValue = (element, value) => {
+      const json = formatJson(value);
+      const tokenPattern = /("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(?=\s*:)|("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g;
+      element.textContent = '';
+      let lastIndex = 0;
+      for (const match of json.matchAll(tokenPattern)) {
+        const [token, key, stringValue, boolValue] = match;
+        const index = match.index ?? 0;
+        if (index > lastIndex) {
+          element.appendChild(document.createTextNode(json.slice(lastIndex, index)));
+        }
+        const span = document.createElement('span');
+        if (key) span.className = 'info-json-key';
+        else if (stringValue) span.className = 'info-json-string';
+        else if (boolValue) span.className = 'info-json-boolean';
+        else if (token === 'null') span.className = 'info-json-null';
+        else span.className = 'info-json-number';
+        span.textContent = token;
+        element.appendChild(span);
+        lastIndex = index + token.length;
+      }
+      if (lastIndex < json.length) {
+        element.appendChild(document.createTextNode(json.slice(lastIndex)));
+      }
     };
     const addInfoItem = (label, value, options = {}) => {
       const li = document.createElement('li');
@@ -2174,7 +2189,7 @@
       const val = document.createElement(options.json ? 'pre' : 'span');
       val.className = options.json ? 'info-value info-value-json info-json' : 'info-value';
       if (options.json) {
-        val.innerHTML = formatJsonHtml(value);
+        renderJsonValue(val, value);
       } else {
         val.textContent = formatValue(value);
       }
