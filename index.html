@@ -1363,12 +1363,12 @@
       </div>
       <p style="margin-top:.75rem;color:var(--color-text-secondary);">
         This snapshot highlights data automatically shared with a simple website, including device hints and public metadata.
-        Public IP enrichment uses ifconfig.io (which may log request metadata).
+        Public IP enrichment uses ipapi.co (which may log request metadata).
       </p>
       <ul id="infoList" class="info-list"></ul>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.75rem;">
         <button id="ipEnrichBtn" class="tool-btn" type="button">Refresh public IP</button>
-        <span class="tool-meta">Uses ifconfig.io (may log request metadata).</span>
+        <span class="tool-meta">Uses ipapi.co (may log request metadata).</span>
       </div>
       <p id="infoStatus" class="tool-meta" style="margin-top:1rem;">Collecting browser signals…</p>
     </div>
@@ -2222,7 +2222,7 @@
         if (infoData.network) addInfoItem('Network / ASN', infoData.network);
         if (location) addInfoItem('Approx. location', location);
       } else if (ipLookupFailed) {
-        addInfoItem('Public IP', 'Unavailable (ifconfig.io request failed)');
+        addInfoItem('Public IP', 'Unavailable (ipapi.co request failed)');
       }
     };
 
@@ -2276,10 +2276,10 @@
       ipEnrichBtn.textContent = 'Fetching…';
       ipEnrichBtn.setAttribute('aria-busy', 'true');
       ipEnrichBtn.setAttribute('aria-disabled', 'true');
-      infoStatus.textContent = 'Fetching public IP details from ifconfig.io…';
+      infoStatus.textContent = 'Fetching public IP details from ipapi.co…';
       ipLookupPromise = (async () => {
         try {
-          const res = await fetchWithTimeout('https://ifconfig.io/all.json', {
+          const res = await fetchWithTimeout('https://ipapi.co/json/', {
             headers: {
               Accept: 'application/json',
             },
@@ -2291,14 +2291,22 @@
           }
           Object.assign(infoData, {
             publicIp: data.ip,
-            sourceIp: data.forwarded || data.ip,
-            network: data.host || undefined,
-            city: undefined,
-            region: undefined,
-            country: data.country_code || undefined,
+            sourceIp: data.ip,
+            network: data.org || data.asn || undefined,
+            city: data.city || undefined,
+            region: data.region || undefined,
+            country: data.country_name || data.country_code || undefined,
           });
         } catch (err) {
           ipLookupFailed = true;
+          Object.assign(infoData, {
+            publicIp: undefined,
+            sourceIp: undefined,
+            network: undefined,
+            city: undefined,
+            region: undefined,
+            country: undefined,
+          });
           infoStatus.textContent = err?.message === 'Failed to fetch'
             ? 'Public IP lookup unavailable.'
             : (err?.message || 'Public IP lookup unavailable.');
