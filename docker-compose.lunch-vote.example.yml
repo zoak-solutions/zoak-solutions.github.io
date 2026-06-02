@@ -1,0 +1,24 @@
+# Example service for the lunch vote API. Integrate it into the production
+# deployment stack that owns Caddy and the static site.
+#
+# Caddy path-stripping integration:
+# handle_path /api/* {
+#   reverse_proxy lunch_vote_api:8080
+# }
+#
+# handle {
+#   root * /usr/share/caddy
+#   file_server
+# }
+services:
+  lunch_vote_api:
+    build: ./lunch-vote-api
+    environment:
+      VOTE_DB_PATH: /data/lunch-votes.sqlite
+      VOTE_IP_HASH_SALT: change-me-in-production
+    volumes:
+      - lunch_vote_data:/data
+    restart: unless-stopped
+
+volumes:
+  lunch_vote_data:

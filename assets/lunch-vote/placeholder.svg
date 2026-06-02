@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">Lunch venue image placeholder</title>
+  <desc id="desc">A ZOAK Solutions branded placeholder for lunch venue thumbnails.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f1f1f"/>
+      <stop offset="0.55" stop-color="#2b2418"/>
+      <stop offset="1" stop-color="#0e0e0e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D7881D"/>
+      <stop offset="1" stop-color="#F9DC06"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <path d="M0 455 C150 395 260 500 410 430 C540 370 650 385 800 320 L800 600 L0 600 Z" fill="#151515" opacity=".88"/>
+  <circle cx="640" cy="120" r="104" fill="#D7881D" opacity=".16"/>
+  <circle cx="690" cy="170" r="78" fill="#F9DC06" opacity=".12"/>
+  <rect x="92" y="120" width="616" height="360" rx="34" fill="none" stroke="#D7881D" stroke-width="4" opacity=".62"/>
+  <path d="M276 358 H524" stroke="url(#accent)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M310 250 C332 222 370 206 401 208 C444 211 482 237 492 278 C498 304 489 329 466 348 H332 C304 327 295 283 310 250 Z" fill="none" stroke="#F9DC06" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M350 210 V160 M400 204 V148 M450 220 V168" stroke="#D7881D" stroke-width="8" stroke-linecap="round"/>
+  <text x="400" y="422" text-anchor="middle" font-family="Figtree, Arial, sans-serif" font-size="34" font-weight="700" fill="#ffffff">Venue image pending</text>
+  <text x="400" y="462" text-anchor="middle" font-family="Figtree, Arial, sans-serif" font-size="22" fill="#cccccc">Replace with an approved local thumbnail</text>
+</svg>
