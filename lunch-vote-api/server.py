@@ -3,10 +3,10 @@ import hashlib
 import json
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 
 ALLOWED_VENUES = {
@@ -26,7 +26,9 @@ VENUE_ORDER = [
 MAX_BODY_BYTES = 16 * 1024
 MAX_NAME_LENGTH = 80
 MAX_NOTE_LENGTH = 500
+MAX_TOKEN_LENGTH = 128
 DEFAULT_DB_PATH = "/data/lunch-votes.sqlite"
+TOKEN_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 
 
 def env_int(name, default):
@@ -38,7 +40,7 @@ def env_int(name, default):
 
 DB_PATH = os.environ.get("VOTE_DB_PATH", DEFAULT_DB_PATH)
 IP_HASH_SALT = os.environ.get("VOTE_IP_HASH_SALT", "")
-DUPLICATE_WINDOW_SECONDS = env_int("VOTE_DUPLICATE_WINDOW_SECONDS", 12 * 60 * 60)
+TOKEN_HASH_SALT = os.environ.get("VOTE_TOKEN_HASH_SALT", IP_HASH_SALT)
 
 
 def utc_now():
@@ -63,15 +65,46 @@ def init_db():
               voter_name TEXT,
               dietary_note TEXT,
               comment TEXT,
+              vote_token_hash TEXT,
+              vote_key_hash TEXT,
               ip_hash TEXT,
               user_agent TEXT,
-              created_at TEXT NOT NULL
+              created_at TEXT NOT NULL,
+              updated_at TEXT
             )
             """
         )
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(votes)").fetchall()}
+        if "vote_token_hash" not in columns:
+            conn.execute("ALTER TABLE votes ADD COLUMN vote_token_hash TEXT")
+        if "vote_key_hash" not in columns:
+            conn.execute("ALTER TABLE votes ADD COLUMN vote_key_hash TEXT")
+        if "updated_at" not in columns:
+            conn.execute("ALTER TABLE votes ADD COLUMN updated_at TEXT")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS vote_tokens (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              token_hash TEXT NOT NULL UNIQUE,
+              recipient_label TEXT,
+              recipient_email_hash TEXT,
+              created_at TEXT NOT NULL,
+              used_at TEXT,
+              updated_at TEXT,
+              used_vote_id INTEGER,
+              FOREIGN KEY (used_vote_id) REFERENCES votes(id)
+            )
+            """
+        )
+        token_columns = {row[1] for row in conn.execute("PRAGMA table_info(vote_tokens)").fetchall()}
+        if "updated_at" not in token_columns:
+            conn.execute("ALTER TABLE vote_tokens ADD COLUMN updated_at TEXT")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_venue ON votes(venue)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_vote_token_hash ON votes(vote_token_hash)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_vote_key_hash ON votes(vote_key_hash)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_votes_ip_hash ON votes(ip_hash)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_vote_tokens_used_at ON vote_tokens(used_at)")
 
 
 def connect_db():
@@ -97,6 +130,31 @@ def hash_ip(ip_address):
     return digest.hexdigest()
 
 
+def hash_vote_token(token):
+    if not token:
+        return ""
+    digest = hashlib.sha256()
+    digest.update(TOKEN_HASH_SALT.encode("utf-8"))
+    digest.update(b":vote-token:")
+    digest.update(token.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def hash_recipient_email(email):
+    value = (email or "").strip().lower()
+    if not value:
+        return ""
+    digest = hashlib.sha256()
+    digest.update(TOKEN_HASH_SALT.encode("utf-8"))
+    digest.update(b":recipient-email:")
+    digest.update(value.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def is_valid_vote_token(value):
+    return 24 <= len(value) <= MAX_TOKEN_LENGTH and all(character in TOKEN_CHARS for character in value)
+
+
 def clean_text(payload, key, max_length):
     value = payload.get(key, "")
     if value is None:
@@ -119,6 +177,9 @@ class LunchVoteHandler(BaseHTTPRequestHandler):
             return
         if path == "/lunch-vote/results":
             self.handle_results()
+            return
+        if path == "/lunch-vote/token":
+            self.handle_token_status()
             return
         self.send_json({"ok": False, "error": "Not found."}, HTTPStatus.NOT_FOUND)
 
@@ -159,6 +220,7 @@ class LunchVoteHandler(BaseHTTPRequestHandler):
         try:
             venue = clean_text(payload, "venue", 120)
             name = clean_text(payload, "name", MAX_NAME_LENGTH)
+            token = clean_text(payload, "token", MAX_TOKEN_LENGTH)
             dietary = clean_text(payload, "dietary", MAX_NOTE_LENGTH)
             comment = clean_text(payload, "comment", MAX_NOTE_LENGTH)
             website = clean_text(payload, "website", MAX_NOTE_LENGTH)
@@ -172,42 +234,121 @@ class LunchVoteHandler(BaseHTTPRequestHandler):
         if venue not in ALLOWED_VENUES:
             self.send_json({"ok": False, "error": "Invalid venue."}, HTTPStatus.BAD_REQUEST)
             return
+        if not is_valid_vote_token(token):
+            self.send_json(
+                {"ok": False, "error": "Use your unique voting link from the email invitation."},
+                HTTPStatus.BAD_REQUEST,
+            )
+            return
 
-        ip_hash = hash_ip(client_ip_from_headers(self))
         user_agent = self.headers.get("User-Agent", "")[:500]
-        created_at = isoformat_utc(utc_now())
+        client_ip = client_ip_from_headers(self)
+        ip_hash = hash_ip(client_ip)
+        vote_token_hash = hash_vote_token(token)
+        now = isoformat_utc(utc_now())
 
         with connect_db() as conn:
-            if ip_hash and DUPLICATE_WINDOW_SECONDS > 0:
-                cutoff = isoformat_utc(utc_now() - timedelta(seconds=DUPLICATE_WINDOW_SECONDS))
-                duplicate = conn.execute(
+            conn.execute("BEGIN IMMEDIATE")
+            token_row = conn.execute(
+                "SELECT id, used_at, used_vote_id FROM vote_tokens WHERE token_hash = ?",
+                (vote_token_hash,),
+            ).fetchone()
+            if not token_row:
+                conn.rollback()
+                self.send_json(
+                    {"ok": False, "error": "This voting link is invalid."},
+                    HTTPStatus.FORBIDDEN,
+                )
+                return
+
+            existing_vote = None
+            if token_row["used_vote_id"]:
+                existing_vote = conn.execute(
+                    "SELECT id FROM votes WHERE id = ? AND vote_token_hash = ?",
+                    (token_row["used_vote_id"], vote_token_hash),
+                ).fetchone()
+            if not existing_vote:
+                existing_vote = conn.execute(
                     """
-                    SELECT 1
+                    SELECT id
                     FROM votes
-                    WHERE ip_hash = ? AND created_at >= ?
+                    WHERE vote_token_hash = ?
+                    ORDER BY created_at DESC, id DESC
                     LIMIT 1
                     """,
-                    (ip_hash, cutoff),
+                    (vote_token_hash,),
                 ).fetchone()
-                if duplicate:
-                    self.send_json(
-                        {
-                            "ok": False,
-                            "error": "A vote has already been recorded recently from this network.",
-                        },
-                        HTTPStatus.TOO_MANY_REQUESTS,
-                    )
-                    return
+
+            if existing_vote:
+                vote_id = existing_vote["id"]
+                conn.execute(
+                    """
+                    UPDATE votes
+                    SET venue = ?,
+                        voter_name = ?,
+                        dietary_note = ?,
+                        comment = ?,
+                        ip_hash = ?,
+                        user_agent = ?,
+                        updated_at = ?
+                    WHERE id = ?
+                    """,
+                    (venue, name, dietary, comment, ip_hash, user_agent, now, vote_id),
+                )
+                message = "Vote updated."
+            else:
+                cursor = conn.execute(
+                    """
+                    INSERT INTO votes (venue, voter_name, dietary_note, comment, vote_token_hash, ip_hash, user_agent, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (venue, name, dietary, comment, vote_token_hash, ip_hash, user_agent, now, now),
+                )
+                vote_id = cursor.lastrowid
+                message = "Vote recorded."
 
             conn.execute(
                 """
-                INSERT INTO votes (venue, voter_name, dietary_note, comment, ip_hash, user_agent, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                UPDATE vote_tokens
+                SET used_at = COALESCE(used_at, ?),
+                    updated_at = ?,
+                    used_vote_id = ?
+                WHERE id = ?
                 """,
-                (venue, name, dietary, comment, ip_hash, user_agent, created_at),
+                (now, now, vote_id, token_row["id"]),
             )
 
-        self.send_json({"ok": True, "message": "Vote recorded."})
+        self.send_json({"ok": True, "message": message, "voted": True, "venue": venue})
+
+    def handle_token_status(self):
+        query = parse_qs(urlparse(self.path).query)
+        token = (query.get("token") or [""])[0].strip()
+        if not is_valid_vote_token(token):
+            self.send_json(
+                {"ok": False, "usable": False, "error": "This voting link is invalid."},
+                HTTPStatus.BAD_REQUEST,
+            )
+            return
+
+        with connect_db() as conn:
+            token_row = conn.execute(
+                """
+                SELECT t.used_at, t.used_vote_id, v.venue
+                FROM vote_tokens t
+                LEFT JOIN votes v ON v.id = t.used_vote_id
+                WHERE t.token_hash = ?
+                """,
+                (hash_vote_token(token),),
+            ).fetchone()
+
+        if not token_row:
+            self.send_json(
+                {"ok": False, "usable": False, "error": "This voting link is invalid."},
+                HTTPStatus.NOT_FOUND,
+            )
+            return
+        voted_venue = token_row["venue"] or ""
+        self.send_json({"ok": True, "usable": True, "voted": bool(voted_venue), "venue": voted_venue})
 
     def handle_results(self):
         with connect_db() as conn:

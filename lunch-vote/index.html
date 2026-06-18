@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vote for Lunch — ZOAK Solutions</title>
   <meta name="description" content="Vote for the next ZOAK Solutions team lunch venue." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'sha256-9XvVduAvBsrOLhurWicDrxtJ+k5ectmF67IFI9cQes4=' 'sha256-I6oMfprt2s1c1m4ZT+6K6Y/DcaxmCeNrz46GTWGVuyk=' 'sha256-IPYAYfI8bvG+DTOWVdYnNQgjhxpPwdNElqPiqQUU9Mw='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://raw.githubusercontent.com https://github.com https://avatars.githubusercontent.com; connect-src 'self' https://api.github.com https://rdap.org https://dns.google https://trace.dns.google https://ipapi.co" />
   <script>
     (function () {
       var theme = 'dark';
@@ -14,9 +15,6 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
       --color-background: #0e0e0e;
@@ -37,7 +35,7 @@
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: 'Figtree', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top right, rgba(215,136,29,.14), transparent 28%), var(--color-background);
       color: var(--color-text-primary);
       line-height: 1.7;
@@ -114,6 +112,10 @@
     .hero-venue-thumb[aria-pressed="true"] {
       border-color: var(--color-secondary);
       box-shadow: 0 0 0 3px rgba(249,220,6,.18), var(--shadow-lg);
+    }
+    .hero-venue-thumb.voted {
+      border-color: var(--color-success);
+      box-shadow: 0 0 0 3px rgba(46,204,113,.24), var(--shadow-lg);
     }
     .hero-venue-thumb img {
       width: 100%;
@@ -233,6 +235,11 @@
       border-color: var(--color-secondary);
       background: rgba(249,220,6,.07);
       box-shadow: 0 0 0 3px rgba(249,220,6,.12);
+    }
+    .venue-radio.voted {
+      border-color: var(--color-success);
+      background: rgba(46,204,113,.08);
+      box-shadow: 0 0 0 3px rgba(46,204,113,.16);
     }
     .venue-radio input {
       position: absolute;
@@ -439,19 +446,12 @@
           <div class="card-header">
             <div>
               <h2>Cast Your Vote</h2>
-              <p>Choose one venue and add any notes the organiser should know about.</p>
+              <p>Use your unique email link to choose one venue and add any notes the organiser should know about.</p>
             </div>
           </div>
 
           <form id="voteForm" novalidate>
-            <div id="browserNotice" class="notice">
-              You have already voted from this browser. Results are still available below.
-            </div>
-
-            <div class="field">
-              <label for="voterName">Name or initials <span>Optional</span></label>
-              <input id="voterName" name="name" type="text" maxlength="80" autocomplete="name" />
-            </div>
+            <div id="tokenNotice" class="notice"></div>
 
             <fieldset>
               <legend>Venue <span>Required</span></legend>
@@ -482,7 +482,7 @@
           <div class="card-header">
             <div>
               <h2>Results</h2>
-              <p>Aggregate counts only. Names and notes are not shown publicly.</p>
+              <p>Aggregate counts only. Notes are not shown publicly.</p>
             </div>
             <button id="refreshResults" class="secondary-button" type="button">Refresh</button>
           </div>
@@ -529,7 +529,10 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = 'zoak-lunch-vote-submitted';
+    const TOKEN_STORAGE_KEY = 'zoak-lunch-vote-token';
+    let voteToken = '';
+    let voteTokenUsable = false;
+    let currentVotedVenue = '';
     const VENUES = [
       {
         id: 'hazel',
@@ -582,6 +585,130 @@
         fallbackImage: '/assets/lunch-vote/placeholder.svg'
       }
     ];
+
+    function isLikelyVoteToken(value) {
+      return /^[A-Za-z0-9_-]{24,128}$/.test(value || '');
+    }
+
+    function readStoredVoteToken() {
+      try {
+        return sessionStorage.getItem(TOKEN_STORAGE_KEY) || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function storeVoteToken(token) {
+      try {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } catch (e) {}
+    }
+
+    function clearStoredVoteToken() {
+      try {
+        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function captureVoteTokenFromUrl() {
+      const url = new URL(window.location.href);
+      const token = (url.searchParams.get('token') || '').trim();
+      if (token) {
+        url.searchParams.delete('token');
+        const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+      return token;
+    }
+
+    function setTokenNotice(message) {
+      const notice = document.getElementById('tokenNotice');
+      notice.textContent = message;
+      notice.classList.toggle('visible', Boolean(message));
+    }
+
+    function updateSubmitState(isBusy = false) {
+      const submitButton = document.getElementById('submitButton');
+      submitButton.disabled = isBusy || !voteTokenUsable;
+      submitButton.textContent = currentVotedVenue ? 'Update vote' : 'Cast vote';
+    }
+
+    function venueIdFromName(venueName) {
+      const venue = VENUES.find((item) => item.name === venueName);
+      return venue ? venue.id : '';
+    }
+
+    function applyCurrentVote(venueName) {
+      currentVotedVenue = venueName || '';
+      document.querySelectorAll('.hero-venue-thumb').forEach((thumb) => {
+        const venue = VENUES.find((item) => item.id === thumb.dataset.selectVenue);
+        thumb.classList.toggle('voted', Boolean(venue && venue.name === currentVotedVenue));
+      });
+      document.querySelectorAll('.venue-radio').forEach((label) => {
+        const input = label.querySelector('input[name="venue"]');
+        label.classList.toggle('voted', Boolean(input && input.value === currentVotedVenue));
+      });
+      updateSubmitState();
+    }
+
+    async function verifyVoteToken() {
+      if (!voteToken) return;
+      try {
+        const response = await fetch(`/api/lunch-vote/token?token=${encodeURIComponent(voteToken)}`);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok || !data.usable) {
+          voteTokenUsable = false;
+          applyCurrentVote('');
+          setTokenNotice(data.error || 'This voting link cannot be used.');
+          updateSubmitState();
+          return;
+        }
+        voteTokenUsable = true;
+        if (data.voted && data.venue) {
+          applyCurrentVote(data.venue);
+          const venueId = venueIdFromName(data.venue);
+          if (venueId) {
+            selectVenue(venueId, { scroll: false, focus: false });
+          }
+          setTokenNotice(`Your current vote is ${data.venue}. Select another venue to update it.`);
+        } else {
+          applyCurrentVote('');
+          setTokenNotice('Your voting link is ready. Cast one vote below.');
+        }
+        updateSubmitState();
+      } catch (e) {
+        setTokenNotice('Could not verify this voting link yet. You can still try to submit.');
+        updateSubmitState();
+      }
+    }
+
+    function initializeVoteToken() {
+      const urlToken = captureVoteTokenFromUrl();
+      if (urlToken && !isLikelyVoteToken(urlToken)) {
+        voteToken = '';
+        voteTokenUsable = false;
+        applyCurrentVote('');
+        clearStoredVoteToken();
+        setTokenNotice('This voting link is not valid. Ask the organiser for a fresh link.');
+        updateSubmitState();
+        return;
+      }
+
+      voteToken = urlToken || readStoredVoteToken();
+      if (!voteToken) {
+        voteTokenUsable = false;
+        applyCurrentVote('');
+        setTokenNotice('Use your unique voting link from the email invitation to cast a vote. Results are still available below.');
+        updateSubmitState();
+        return;
+      }
+
+      storeVoteToken(voteToken);
+      voteTokenUsable = true;
+      setTokenNotice('Checking your voting link...');
+      updateSubmitState();
+      verifyVoteToken();
+    }
 
     function renderHeroThumbnails() {
       const strip = document.getElementById('heroVenueStrip');
@@ -678,18 +805,22 @@
       const selected = form.querySelector('input[name="venue"]:checked');
       const submitButton = document.getElementById('submitButton');
       const payload = {
-        name: document.getElementById('voterName').value.trim(),
+        token: voteToken,
         venue: selected ? selected.value : '',
         dietary: document.getElementById('dietary').value.trim(),
         comment: document.getElementById('comment').value.trim(),
         website: document.getElementById('website').value.trim()
       };
 
+      if (!isLikelyVoteToken(payload.token)) {
+        setStatus('Use your unique voting link from the email invitation.', 'error');
+        return;
+      }
       if (!payload.venue) {
         setStatus('Choose a venue before casting your vote.', 'error');
         return;
       }
-      if (payload.name.length > 80 || payload.dietary.length > 500 || payload.comment.length > 500) {
+      if (payload.dietary.length > 500 || payload.comment.length > 500) {
         setStatus('One of the text fields is longer than allowed.', 'error');
         return;
       }
@@ -712,16 +843,19 @@
           throw new Error(data.error || 'Vote could not be recorded.');
         }
 
-        try {
-          localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-        } catch (e) {}
-        showAlreadyVotedNotice();
+        voteTokenUsable = true;
+        applyCurrentVote(data.venue || payload.venue);
+        const venueId = venueIdFromName(data.venue || payload.venue);
+        if (venueId) {
+          selectVenue(venueId, { scroll: false, focus: false });
+        }
+        setTokenNotice(`Your current vote is ${data.venue || payload.venue}. Select another venue to update it.`);
         setStatus(data.message || 'Vote recorded.', 'success');
         await loadResults();
       } catch (error) {
         setStatus(error.message || 'Vote could not be recorded.', 'error');
       } finally {
-        submitButton.disabled = false;
+        updateSubmitState();
       }
     }
 
@@ -797,22 +931,13 @@
       });
     }
 
-    function showAlreadyVotedNotice() {
-      const notice = document.getElementById('browserNotice');
-      notice.classList.add('visible');
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       renderHeroThumbnails();
       renderVenueRadios();
       renderDetailsTable();
       document.getElementById('voteForm').addEventListener('submit', submitVote);
       document.getElementById('refreshResults').addEventListener('click', loadResults);
-      try {
-        if (localStorage.getItem(STORAGE_KEY)) {
-          showAlreadyVotedNotice();
-        }
-      } catch (e) {}
+      initializeVoteToken();
       loadResults();
     });
   </script>

@@ -16,7 +16,7 @@ Create a public lunch voting page at:
 
 The page should look like the existing privacy policy page, but with a more visual hero section that includes thumbnails for each lunch venue option.
 
-The form should allow visitors to vote for one venue and optionally provide their name, dietary notes, and comments. Votes should be persisted by a small backend API behind Caddy.
+The form should allow visitors to vote for one venue and optionally provide dietary notes and comments. Votes should be persisted by a small backend API behind Caddy.
 
 ## Lunch options
 
@@ -44,7 +44,7 @@ assets/lunch-vote/rare-steakhouse.webp
 assets/lunch-vote/placeholder.svg
 lunch-vote-api/server.py
 lunch-vote-api/Dockerfile
-docker-compose.lunch-vote.example.yml
+docker-compose-example.yaml
 ```
 
 Do not refactor the existing home page unless adding a link to `/lunch-vote/` is explicitly desired.
@@ -314,7 +314,6 @@ After the hero, add three main cards:
 Fields:
 
 ```text
-- Name or initials: optional text input
 - Venue: required radio group
 - Dietary/accessibility note: optional textarea
 - Comment: optional textarea
@@ -329,9 +328,9 @@ Required behavior:
 - Submit button disabled during submission.
 - Show inline error messages.
 - Show success message after a successful vote.
-- Store localStorage key after successful vote:
-  zoak-lunch-vote-submitted
-- If localStorage says the user has already voted, show a friendly “You have already voted from this browser” notice, but still allow results to load.
+- Require a unique voter token from the email invitation link.
+- If no usable token is present, leave results available but disable voting.
+- Remove the token from the browser address bar after reading it from the link.
 ```
 
 Use:
@@ -372,6 +371,8 @@ Implement inline JavaScript in `lunch-vote/index.html`.
 Functions to include:
 
 ```text
+initializeVoteToken()
+verifyVoteToken()
 renderHeroThumbnails()
 renderVenueRadios()
 selectVenue(venueId)
@@ -385,7 +386,7 @@ Validation:
 
 ```text
 - Venue is required.
-- Name max length: 80 characters.
+- One-time vote token is required.
 - Dietary note max length: 500 characters.
 - Comment max length: 500 characters.
 - Honeypot must remain empty.
@@ -404,7 +405,8 @@ const response = await fetch('/api/lunch-vote', {
 After successful submission:
 
 ```text
-- Save localStorage flag.
+- Clear the stored session token.
+- Mark the email link as used.
 - Show success message.
 - Reload results.
 - Keep selected venue visible.
@@ -458,14 +460,28 @@ CREATE TABLE IF NOT EXISTS votes (
   voter_name TEXT,
   dietary_note TEXT,
   comment TEXT,
+  vote_token_hash TEXT,
+  vote_key_hash TEXT,
   ip_hash TEXT,
   user_agent TEXT,
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS vote_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token_hash TEXT NOT NULL UNIQUE,
+  recipient_label TEXT,
+  recipient_email_hash TEXT,
+  created_at TEXT NOT NULL,
+  used_at TEXT,
+  used_vote_id INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at);
 CREATE INDEX IF NOT EXISTS idx_votes_venue ON votes(venue);
 CREATE INDEX IF NOT EXISTS idx_votes_ip_hash ON votes(ip_hash);
+CREATE INDEX IF NOT EXISTS idx_votes_vote_token_hash ON votes(vote_token_hash);
+CREATE INDEX IF NOT EXISTS idx_vote_tokens_used_at ON vote_tokens(used_at);
 ```
 
 ### Allowed venues
@@ -488,7 +504,7 @@ Request body:
 
 ```json
 {
-  "name": "Mark",
+  "token": "unique-token-from-email-link",
   "venue": "Hazel",
   "dietary": "No seafood",
   "comment": "Prefer somewhere quiet",
@@ -502,10 +518,13 @@ Server behavior:
 - Reject non-JSON requests.
 - Reject payloads over 16 KB.
 - Reject missing or invalid venue.
+- Reject missing, invalid, or unknown vote tokens.
 - Reject if honeypot field "website" is non-empty.
 - Trim all text fields.
 - Enforce max lengths.
 - Hash IP address with server-side salt before storage.
+- Store only salted token hashes, not raw tokens.
+- Insert or update the token's current vote in the same database transaction.
 - Store created_at as UTC ISO-8601.
 ```
 
@@ -514,7 +533,9 @@ Response success:
 ```json
 {
   "ok": true,
-  "message": "Vote recorded."
+  "message": "Vote recorded.",
+  "voted": true,
+  "venue": "Hazel"
 }
 ```
 
@@ -524,6 +545,36 @@ Response error:
 {
   "ok": false,
   "error": "Invalid venue."
+}
+```
+
+### GET `/lunch-vote/token`
+
+Query string:
+
+```text
+?token=unique-token-from-email-link
+```
+
+Response for a token with no current vote:
+
+```json
+{
+  "ok": true,
+  "usable": true,
+  "voted": false,
+  "venue": ""
+}
+```
+
+Response for a token with a current vote:
+
+```json
+{
+  "ok": true,
+  "usable": true,
+  "voted": true,
+  "venue": "Hazel"
 }
 ```
 
@@ -582,27 +633,55 @@ CMD ["python", "/app/server.py"]
 Create:
 
 ```text
-docker-compose.lunch-vote.example.yml
+docker-compose-example.yaml
 ```
 
 Suggested content:
 
 ```yaml
 services:
+  zoak_site:
+    image: caddy:2-alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/srv:ro
+    configs:
+      - source: zoak_caddyfile
+        target: /etc/caddy/Caddyfile
+    depends_on:
+      - lunch_vote_api
+    restart: unless-stopped
+
   lunch_vote_api:
     build: ./lunch-vote-api
     environment:
       VOTE_DB_PATH: /data/lunch-votes.sqlite
       VOTE_IP_HASH_SALT: change-me-in-production
+      VOTE_TOKEN_HASH_SALT: change-me-in-production
     volumes:
       - lunch_vote_data:/data
     restart: unless-stopped
+
+configs:
+  zoak_caddyfile:
+    content: |
+      :80 {
+        root * /srv
+        encode zstd gzip
+
+        handle_path /api/* {
+          reverse_proxy lunch_vote_api:8080
+        }
+
+        file_server
+      }
 
 volumes:
   lunch_vote_data:
 ```
 
-Do not assume this repo owns the production Compose file. This example file is for integration into the actual deployment stack.
+Do not assume this repo owns the production Compose file. This example shows the full static site plus API stack and can be adapted into the actual deployment stack.
 
 ## Caddy integration
 
@@ -653,29 +732,53 @@ Suggested live region:
 For this lunch poll, keep privacy lightweight but sensible:
 
 ```text
-- Do not show names/comments publicly.
+- Do not show comments publicly.
 - Do not store raw IP addresses.
-- Store salted IP hash only.
-- Add basic rate limiting or duplicate throttling by hashed IP if simple to implement.
+- Store salted voter token and IP hashes only.
+- Require a unique email invitation token for each vote.
 - Include hidden honeypot field.
 - Limit request body size.
 - Limit text field lengths.
 ```
 
-Optional duplicate rule:
+Implemented token voting rule:
 
 ```text
-Allow one vote per hashed IP every 12 hours.
+Allow one current vote per generated email invitation token. The organiser generates one random token per voter and sends each voter a unique /lunch-vote/?token=... link. The first submission creates that token's vote; later submissions from the same token update the same vote row, so results do not inflate.
 ```
 
-If implemented, return:
+Successful update response:
 
 ```json
 {
-  "ok": false,
-  "error": "A vote has already been recorded recently from this network."
+  "ok": true,
+  "message": "Vote updated.",
+  "voted": true,
+  "venue": "Tazio"
 }
 ```
+
+## Unique link email workflow
+
+Keep the voter list outside the repository. Create a private CSV such as:
+
+```csv
+email,name
+person@example.com,Person Name
+```
+
+Generate individualized mail-merge links:
+
+```bash
+VOTE_DB_PATH=/path/to/lunch-votes.sqlite \
+VOTE_TOKEN_HASH_SALT='production-secret' \
+python3 lunch-vote-api/manage_tokens.py generate \
+  --voters voters.csv \
+  --base-url https://zoak.solutions/lunch-vote/ \
+  --output lunch-vote-links.csv
+```
+
+Send `lunch-vote-links.csv` through an email mail-merge tool using the `vote_link` column. Do not send one BCC email if every recipient needs a unique URL; use a per-recipient mail merge or transactional email job. The database stores token hashes and recipient email hashes only.
 
 ## Acceptance criteria
 
@@ -687,6 +790,7 @@ The implementation is complete when:
 - Clicking a hero thumbnail selects the corresponding venue in the form.
 - The form submits to /api/lunch-vote.
 - Votes persist in SQLite.
+- Each current vote is owned by a unique voter token and can be updated by that token.
 - Results load from /api/lunch-vote/results.
 - Results show aggregate counts only.
 - The page works on mobile.
@@ -703,16 +807,17 @@ The implementation is complete when:
 4. Implement client-side rendering and form submission.
 5. Add `lunch-vote-api/server.py` with SQLite persistence.
 6. Add `lunch-vote-api/Dockerfile`.
-7. Add `docker-compose.lunch-vote.example.yml`.
+7. Add `docker-compose-example.yaml` for the static site plus lunch-vote API.
 8. Document the Caddy `handle_path /api/*` integration in a comment or deployment note.
 9. Test with:
 
    ```text
    curl http://localhost:8080/health
    curl http://localhost:8080/lunch-vote/results
+   python3 lunch-vote-api/manage_tokens.py generate --count 1 --base-url http://localhost:8080/lunch-vote/ --output /tmp/lunch-vote-links.csv
    curl -X POST http://localhost:8080/lunch-vote \
      -H 'Content-Type: application/json' \
-     -d '{"venue":"Hazel","name":"Test","dietary":"","comment":"","website":""}'
+     -d '{"venue":"Hazel","token":"TOKEN_FROM_GENERATED_CSV","dietary":"","comment":"","website":""}'
    ```
 10. Verify the browser flow through Caddy at:
 

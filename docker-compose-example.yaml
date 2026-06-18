@@ -1,0 +1,42 @@
+# Example full-site stack for zoak.solutions plus the lunch-vote API.
+# Adjust the published port, domain, and secrets for production.
+services:
+  zoak_site:
+    image: caddy:2-alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/srv:ro
+    configs:
+      - source: zoak_caddyfile
+        target: /etc/caddy/Caddyfile
+    depends_on:
+      - lunch_vote_api
+    restart: unless-stopped
+
+  lunch_vote_api:
+    build: ./lunch-vote-api
+    env_file:
+      - .env
+    environment:
+      VOTE_DB_PATH: /data/lunch-votes.sqlite
+    volumes:
+      - lunch_vote_data:/data
+    restart: unless-stopped
+
+configs:
+  zoak_caddyfile:
+    content: |
+      :80 {
+        root * /srv
+        encode zstd gzip
+
+        handle_path /api/* {
+          reverse_proxy lunch_vote_api:8080
+        }
+
+        file_server
+      }
+
+volumes:
+  lunch_vote_data:

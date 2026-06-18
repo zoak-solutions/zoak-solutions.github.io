@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY server.py /app/server.py
+COPY server.py manage_tokens.py /app/
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser \
   && mkdir -p /data \
