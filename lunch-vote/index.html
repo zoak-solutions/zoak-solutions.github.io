@@ -3,23 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vote for Lunch — ZOAK Solutions</title>
-  <meta name="description" content="Vote for the next ZOAK Solutions team lunch venue." />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'sha256-9XvVduAvBsrOLhurWicDrxtJ+k5ectmF67IFI9cQes4=' 'sha256-I6oMfprt2s1c1m4ZT+6K6Y/DcaxmCeNrz46GTWGVuyk=' 'sha256-IPYAYfI8bvG+DTOWVdYnNQgjhxpPwdNElqPiqQUU9Mw='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://raw.githubusercontent.com https://github.com https://avatars.githubusercontent.com; connect-src 'self' https://api.github.com https://rdap.org https://dns.google https://trace.dns.google https://ipapi.co" />
-  <script>
-    (function () {
-      var theme = 'dark';
-      try {
-        theme = localStorage.getItem('zoak-theme') || theme;
-      } catch (e) {}
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
+  <title>Poll Vote — ZOAK Solutions</title>
+  <meta name="description" content="Vote in a ZOAK Solutions poll." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self'" />
   <style>
     :root {
       --color-background: #0e0e0e;
       --color-surface: #1a1a1a;
-      --color-card: #1f1f1f;
+      --color-card: #202020;
       --color-primary: #D7881D;
       --color-secondary: #F9DC06;
       --color-success: #2ECC71;
@@ -29,35 +20,32 @@
       --color-border: #333333;
       --color-accent: #69747A;
       --shadow-lg: 0 12px 36px rgba(0,0,0,.35);
-      --radius: 16px;
+      --radius: 8px;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top right, rgba(215,136,29,.14), transparent 28%), var(--color-background);
       color: var(--color-text-primary);
-      line-height: 1.7;
+      line-height: 1.65;
     }
     a { color: var(--color-primary); text-decoration: none; }
-    a:hover { opacity: .85; }
     button, input, textarea { font: inherit; }
-    button { -webkit-tap-highlight-color: transparent; }
     img { max-width: 100%; }
-    .container { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; }
+    .container { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
     .topbar {
       position: sticky; top: 0; z-index: 10;
+      background: rgba(14,14,14,.84);
+      border-bottom: 1px solid var(--color-border);
       -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
-      background: rgba(14,14,14,.82);
-      border-bottom: 1px solid var(--color-border);
     }
     .topbar-inner {
       display: flex; justify-content: space-between; align-items: center; gap: 1rem;
       padding: 1rem 0;
     }
-    .brand { font-weight: 700; letter-spacing: -.02em; color: var(--color-text-primary); }
+    .brand { font-weight: 700; color: var(--color-text-primary); }
     .home-link {
       display: inline-flex; align-items: center; gap: .5rem;
       padding: .65rem 1rem; border-radius: 999px; border: 1px solid var(--color-border);
@@ -75,24 +63,30 @@
       font-size: clamp(2.4rem, 6vw, 4.25rem);
       line-height: 1.05;
     }
-    h2 { margin: 0 0 .75rem; font-size: 1.35rem; }
-    h3 { margin: 0; font-size: 1rem; }
+    h2 { margin: 0 0 .4rem; font-size: 1.35rem; }
     p { color: var(--color-text-secondary); }
-    .lede {
-      max-width: 60ch;
-      color: var(--color-text-secondary);
-      font-size: 1.05rem;
+    .lede { max-width: 64ch; color: var(--color-text-secondary); font-size: 1.05rem; }
+    .timer {
+      display: none;
+      width: max-content;
+      margin-top: 1rem;
+      padding: .5rem .85rem;
+      border: 1px solid rgba(249,220,6,.42);
+      border-radius: 999px;
+      color: var(--color-secondary);
+      background: rgba(249,220,6,.08);
+      font-weight: 800;
     }
-    .hero-venue-strip {
+    .timer.visible { display: block; }
+    .hero-strip {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: .85rem;
       margin-top: 1.75rem;
     }
-    .hero-venue-thumb {
-      position: relative;
-      min-height: 150px;
-      aspect-ratio: 4 / 3;
+    .hero-option {
+      display: grid;
+      grid-template-rows: 112px minmax(86px, auto);
       border: 1px solid var(--color-border);
       border-radius: var(--radius);
       overflow: hidden;
@@ -101,56 +95,28 @@
       background: var(--color-card);
       color: var(--color-text-primary);
       box-shadow: var(--shadow-lg);
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
-    .hero-venue-thumb:hover,
-    .hero-venue-thumb:focus-visible {
-      transform: translateY(-2px);
-      border-color: var(--color-primary);
-      outline: none;
-    }
-    .hero-venue-thumb[aria-pressed="true"] {
+    .hero-option[aria-pressed="true"] {
       border-color: var(--color-secondary);
       box-shadow: 0 0 0 3px rgba(249,220,6,.18), var(--shadow-lg);
     }
-    .hero-venue-thumb.voted {
+    .hero-option.voted {
       border-color: var(--color-success);
       box-shadow: 0 0 0 3px rgba(46,204,113,.24), var(--shadow-lg);
     }
-    .hero-venue-thumb img {
-      width: 100%;
-      height: 100%;
-      min-height: 150px;
-      object-fit: cover;
-      display: block;
-      filter: saturate(1.05) contrast(1.05);
-    }
+    .hero-option img { width: 100%; height: 112px; object-fit: cover; display: block; }
     .thumb-overlay {
-      position: absolute;
-      inset: auto 0 0;
-      display: grid;
-      gap: .15rem;
-      padding: .85rem;
-      text-align: left;
-      background: linear-gradient(180deg, transparent, rgba(0,0,0,.84));
+      display: grid; gap: .2rem;
+      align-content: start;
+      padding: .75rem .85rem; text-align: left;
+      background: rgba(0,0,0,.76);
     }
-    .thumb-overlay strong { font-size: .95rem; }
-    .thumb-overlay span,
-    .thumb-overlay em {
-      color: rgba(255,255,255,.82);
-      font-size: .78rem;
-      font-style: normal;
+    .thumb-overlay span {
+      color: var(--color-text-secondary);
+      font-size: .86rem;
+      line-height: 1.3;
     }
-    .thumb-overlay em {
-      color: var(--color-secondary);
-      font-weight: 700;
-    }
-    .content-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
-      gap: 1rem;
-      align-items: start;
-    }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(320px, .96fr); gap: 1rem; align-items: start; }
     .card {
       background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)), var(--color-card);
       border: 1px solid var(--color-border);
@@ -158,287 +124,80 @@
       box-shadow: var(--shadow-lg);
       padding: 1.75rem;
     }
-    .details-card { grid-column: 1 / -1; }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      align-items: start;
-      margin-bottom: 1rem;
-    }
-    .card-header p {
-      margin: .2rem 0 0;
-      font-size: .95rem;
-    }
+    .card-header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; margin-bottom: 1rem; }
     form { display: grid; gap: 1rem; }
-    label, legend {
-      color: var(--color-text-primary);
-      font-weight: 700;
-    }
-    .field {
-      display: grid;
-      gap: .45rem;
-    }
-    .field span,
-    .field small,
-    legend span {
-      color: var(--color-accent);
-      font-size: .82rem;
-      font-weight: 500;
-    }
-    input[type="text"],
+    label, legend { color: var(--color-text-primary); font-weight: 700; }
+    fieldset { border: 0; padding: 0; margin: 0; }
     textarea {
-      width: 100%;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      background: var(--color-surface);
-      color: var(--color-text-primary);
-      padding: .85rem 1rem;
-      outline: none;
-      transition: border-color .2s ease, box-shadow .2s ease;
+      width: 100%; min-height: 96px; resize: vertical;
+      border: 1px solid var(--color-border); border-radius: 8px;
+      background: var(--color-surface); color: var(--color-text-primary);
+      padding: .85rem 1rem; outline: none;
     }
-    textarea {
-      min-height: 96px;
-      resize: vertical;
+    .option-grid { display: grid; gap: .75rem; margin-top: .65rem; }
+    .option-radio {
+      position: relative; display: grid; gap: .55rem;
+      border: 1px solid var(--color-border); border-radius: 8px;
+      background: rgba(255,255,255,.025); padding: 1rem; cursor: pointer;
     }
-    input[type="text"]:focus,
-    textarea:focus {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(215,136,29,.18);
+    .option-radio.selected { border-color: var(--color-secondary); background: rgba(249,220,6,.07); }
+    .option-radio.voted { border-color: var(--color-success); background: rgba(46,204,113,.08); }
+    .option-radio input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .option-radio strong { color: var(--color-text-primary); }
+    .option-radio small { color: var(--color-text-secondary); }
+    .tag-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .tag {
+      display: inline-flex; gap: .25rem; align-items: center;
+      border-radius: 999px; padding: .16rem .5rem;
+      background: rgba(255,255,255,.08); color: var(--color-text-secondary);
+      font-size: .78rem;
     }
-    fieldset {
-      border: 0;
-      padding: 0;
-      margin: 0;
+    .tag b { color: var(--color-secondary); }
+    .status, .notice {
+      display: none; border: 1px solid var(--color-border); border-radius: 8px;
+      padding: .8rem .95rem; color: var(--color-text-secondary); background: rgba(255,255,255,.03);
     }
-    .venue-radio-grid {
-      display: grid;
-      gap: .75rem;
-      margin-top: .65rem;
-    }
-    .venue-radio {
-      position: relative;
-      display: grid;
-      gap: .35rem;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      background: rgba(255,255,255,.025);
-      padding: 1rem;
-      cursor: pointer;
-      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
-    }
-    .venue-radio:hover,
-    .venue-radio:has(input:focus-visible) {
-      border-color: var(--color-primary);
-    }
-    .venue-radio.selected {
-      border-color: var(--color-secondary);
-      background: rgba(249,220,6,.07);
-      box-shadow: 0 0 0 3px rgba(249,220,6,.12);
-    }
-    .venue-radio.voted {
-      border-color: var(--color-success);
-      background: rgba(46,204,113,.08);
-      box-shadow: 0 0 0 3px rgba(46,204,113,.16);
-    }
-    .venue-radio input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .venue-radio strong {
-      display: flex;
-      justify-content: space-between;
-      gap: .75rem;
-      color: var(--color-text-primary);
-      line-height: 1.35;
-    }
-    .venue-radio em,
-    .badge {
-      color: #121212;
-      background: var(--color-secondary);
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: max-content;
-      padding: .2rem .55rem;
-      font-size: .75rem;
-      font-style: normal;
-      font-weight: 800;
-    }
-    .venue-radio span,
-    .venue-radio small {
-      color: var(--color-text-secondary);
-      font-size: .9rem;
-    }
-    .status,
-    .notice {
-      display: none;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      padding: .8rem .95rem;
-      color: var(--color-text-secondary);
-      background: rgba(255,255,255,.03);
-    }
-    .status.visible,
-    .notice.visible { display: block; }
+    .status.visible, .notice.visible { display: block; }
     .status.success { border-color: rgba(46,204,113,.55); color: var(--color-success); }
     .status.error { border-color: rgba(240,128,128,.6); color: var(--color-error); }
     .status.pending { border-color: rgba(215,136,29,.6); color: var(--color-primary); }
-    .notice {
-      border-color: rgba(249,220,6,.4);
-      color: var(--color-secondary);
+    .notice { border-color: rgba(249,220,6,.4); color: var(--color-secondary); }
+    .honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    .primary-button, .secondary-button {
+      min-height: 46px; border: 1px solid transparent; border-radius: 999px;
+      cursor: pointer; font-weight: 800;
     }
-    .honeypot {
-      position: absolute;
-      left: -10000px;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-    }
-    .primary-button,
-    .secondary-button {
-      min-height: 46px;
-      border: 1px solid transparent;
-      border-radius: 999px;
-      cursor: pointer;
-      font-weight: 800;
-      transition: transform .2s ease, opacity .2s ease, border-color .2s ease;
-    }
-    .primary-button {
-      color: #111;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-      padding: .85rem 1.2rem;
-    }
-    .secondary-button {
-      color: var(--color-text-primary);
-      background: var(--color-surface);
-      border-color: var(--color-border);
-      padding: .65rem 1rem;
-    }
-    .primary-button:hover,
-    .secondary-button:hover {
-      transform: translateY(-1px);
-      opacity: .92;
-    }
-    .primary-button:focus-visible,
-    .secondary-button:focus-visible {
-      outline: 3px solid rgba(249,220,6,.35);
-      outline-offset: 3px;
-    }
-    .primary-button:disabled {
-      cursor: progress;
-      opacity: .65;
-      transform: none;
-    }
-    .results-summary {
-      color: var(--color-text-secondary);
-      margin-bottom: 1rem;
-    }
-    .results-list {
-      display: grid;
-      gap: .9rem;
-    }
-    .result-row {
-      display: grid;
-      gap: .35rem;
-    }
-    .result-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      color: var(--color-text-secondary);
-      font-size: .92rem;
-    }
+    .primary-button { color: #111; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); padding: .85rem 1.2rem; }
+    .secondary-button { color: var(--color-text-primary); background: var(--color-surface); border-color: var(--color-border); padding: .65rem 1rem; }
+    .primary-button:disabled { cursor: not-allowed; opacity: .62; }
+    .results-summary { color: var(--color-text-secondary); margin-bottom: 1rem; }
+    .results-list { display: grid; gap: .9rem; }
+    .result-row { display: grid; gap: .35rem; }
+    .result-meta { display: flex; justify-content: space-between; gap: 1rem; color: var(--color-text-secondary); font-size: .92rem; }
     .result-meta strong { color: var(--color-text-primary); }
-    .result-track {
-      overflow: hidden;
-      height: .7rem;
-      border-radius: 999px;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-    }
-    .result-fill {
-      display: block;
-      height: 100%;
-      min-width: .35rem;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    }
-    .table-wrap {
-      overflow-x: auto;
-      margin-top: 1rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 760px;
-    }
-    th, td {
-      border-bottom: 1px solid var(--color-border);
-      padding: .85rem;
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      color: var(--color-text-primary);
-      font-size: .82rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-    td { color: var(--color-text-secondary); }
-    footer {
-      border-top: 1px solid var(--color-border);
-      padding: 1.5rem 0 3rem;
-      color: var(--color-accent);
-      font-size: .9rem;
-    }
-    .footer-links {
-      display: flex; flex-wrap: wrap; gap: 1rem;
-      margin-top: .75rem;
-    }
-    @media (max-width: 980px) {
-      .content-grid { grid-template-columns: 1fr; }
-      .hero-venue-strip {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        padding-bottom: .5rem;
-      }
-      .hero-venue-thumb {
-        flex: 0 0 min(76vw, 280px);
-        scroll-snap-align: start;
-      }
-    }
-    @media (max-width: 640px) {
-      .topbar-inner { flex-direction: column; align-items: flex-start; }
-      .card { padding: 1.25rem; }
-      .card-header { display: grid; }
-      h1 { font-size: clamp(2.2rem, 15vw, 3.2rem); }
-    }
+    .result-track { overflow: hidden; height: .7rem; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .result-fill { display: block; height: 100%; min-width: .35rem; border-radius: inherit; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary)); }
+    footer { border-top: 1px solid var(--color-border); padding: 1.5rem 0 3rem; color: var(--color-accent); font-size: .9rem; }
+    @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .topbar-inner, .card-header { display: grid; } .card { padding: 1.25rem; } }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="/">ZOAK Solutions</a>
-      <a class="home-link" href="/">← Back to main site</a>
+      <a class="home-link" href="/">Back to main site</a>
     </div>
   </header>
 
   <main>
     <div class="container">
       <section class="hero">
-        <span class="eyebrow">Team Lunch</span>
-        <h1>Vote for Lunch</h1>
-        <p class="lede">
-          Pick your preferred venue for the next ZOAK lunch. Browse the options below, then cast your vote.
-        </p>
-
-        <div id="heroVenueStrip" class="hero-venue-strip" aria-label="Lunch venue options"></div>
+        <span class="eyebrow" id="pollSlugLabel">Poll</span>
+        <h1 id="pollTitle">Loading poll...</h1>
+        <p id="pollDescription" class="lede"></p>
+        <div id="closeTimer" class="timer" aria-live="polite"></div>
+        <div id="heroCandidateStrip" class="hero-strip" aria-label="Poll candidates"></div>
       </section>
 
       <div class="content-grid">
@@ -446,500 +205,46 @@
           <div class="card-header">
             <div>
               <h2>Cast Your Vote</h2>
-              <p>Use your unique email link to choose one venue and add any notes the organiser should know about.</p>
+              <p>Use your unique email link to choose one option.</p>
             </div>
           </div>
 
           <form id="voteForm" novalidate>
             <div id="tokenNotice" class="notice"></div>
-
             <fieldset>
-              <legend>Venue <span>Required</span></legend>
-              <div id="venueChoices" class="venue-radio-grid"></div>
+              <legend>Candidate <span>Required</span></legend>
+              <div id="candidateChoices" class="option-grid"></div>
             </fieldset>
-
-            <div class="field">
-              <label for="dietary">Dietary/accessibility note <span>Optional</span></label>
-              <textarea id="dietary" name="dietary" maxlength="500"></textarea>
-            </div>
-
-            <div class="field">
-              <label for="comment">Comment <span>Optional</span></label>
-              <textarea id="comment" name="comment" maxlength="500"></textarea>
-            </div>
-
+            <label for="comment">Comment <span>Optional</span></label>
+            <textarea id="comment" name="comment" maxlength="500"></textarea>
             <div class="honeypot" aria-hidden="true">
               <label for="website">Website</label>
               <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
             </div>
-
             <div id="voteStatus" class="status" role="status" aria-live="polite"></div>
             <button id="submitButton" class="primary-button" type="submit">Cast vote</button>
           </form>
         </section>
 
-        <section class="card">
+        <section id="resultsCard" class="card">
           <div class="card-header">
             <div>
               <h2>Results</h2>
-              <p>Aggregate counts only. Notes are not shown publicly.</p>
+              <p>Aggregate counts only. Comments are not shown publicly.</p>
             </div>
             <button id="refreshResults" class="secondary-button" type="button">Refresh</button>
           </div>
           <div id="resultsSummary" class="results-summary">Loading results...</div>
           <div id="resultsList" class="results-list" aria-live="polite"></div>
         </section>
-
-        <section class="card details-card">
-          <div class="card-header">
-            <div>
-              <h2>Venue Details</h2>
-              <p>Compare the short list before you vote.</p>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Venue</th>
-                  <th>Cuisine</th>
-                  <th>Vibe &amp; Atmosphere</th>
-                  <th>Order Method</th>
-                  <th>Walk Time</th>
-                </tr>
-              </thead>
-              <tbody id="detailsTableBody"></tbody>
-            </table>
-          </div>
-        </section>
       </div>
     </div>
   </main>
 
   <footer>
-    <div class="container">
-      <div>© 2026 ZOAK Pty Ltd · ABN 68 161 531 880</div>
-      <div class="footer-links">
-        <a href="/">Home</a>
-        <a href="/terms/">Terms of Use</a>
-        <a href="/privacy_policy/">Privacy Policy</a>
-        <a href="mailto:contact@zoak.solutions">Contact</a>
-      </div>
-    </div>
+    <div class="container">© 2026 ZOAK Pty Ltd · ABN 68 161 531 880</div>
   </footer>
 
-  <script>
-    const TOKEN_STORAGE_KEY = 'zoak-lunch-vote-token';
-    let voteToken = '';
-    let voteTokenUsable = false;
-    let currentVotedVenue = '';
-    const VENUES = [
-      {
-        id: 'hazel',
-        name: 'Hazel',
-        cuisine: 'Modern AU / European',
-        vibe: 'Ultra-premium, crisp, and beautifully designed.',
-        orderMethod: 'À la carte or shared wood-fired plates.',
-        walkTime: '1 min',
-        image: '/assets/lunch-vote/hazel.webp',
-        fallbackImage: '/assets/lunch-vote/placeholder.svg'
-      },
-      {
-        id: 'il-solito-posto',
-        name: 'Il Solito Posto',
-        cuisine: 'Classic Italian',
-        vibe: 'Warm, legendary underground corporate institution.',
-        orderMethod: 'Traditional à la carte, individual plates.',
-        walkTime: '2 mins',
-        image: '/assets/lunch-vote/il-solito-posto.webp',
-        fallbackImage: '/assets/lunch-vote/placeholder.svg'
-      },
-      {
-        id: 'supernormal',
-        name: 'Supernormal',
-        cuisine: 'Contemporary Asian',
-        vibe: 'Lively, trendy, and high-energy iconic hotspot.',
-        orderMethod: 'Shared à la carte.',
-        walkTime: '2 mins',
-        image: '/assets/lunch-vote/supernormal.webp',
-        fallbackImage: '/assets/lunch-vote/placeholder.svg'
-      },
-      {
-        id: 'tazio',
-        name: 'Tazio',
-        cuisine: 'Contemporary Italian',
-        vibe: 'Quiet and spacious historic warehouse.',
-        orderMethod: 'Individual plates or fast structured menu.',
-        walkTime: '3 mins',
-        image: '/assets/lunch-vote/tazio.webp',
-        fallbackImage: '/assets/lunch-vote/placeholder.svg'
-      },
-      {
-        id: 'rare-steakhouse',
-        name: 'Rare Steakhouse',
-        cuisine: 'Premium Steakhouse',
-        vibe: 'Classic, polished, and long-standing favorite.',
-        orderMethod: 'Traditional à la carte.',
-        walkTime: '4 mins',
-        image: '/assets/lunch-vote/rare-steakhouse.webp',
-        fallbackImage: '/assets/lunch-vote/placeholder.svg'
-      }
-    ];
-
-    function isLikelyVoteToken(value) {
-      return /^[A-Za-z0-9_-]{24,128}$/.test(value || '');
-    }
-
-    function readStoredVoteToken() {
-      try {
-        return sessionStorage.getItem(TOKEN_STORAGE_KEY) || '';
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function storeVoteToken(token) {
-      try {
-        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-      } catch (e) {}
-    }
-
-    function clearStoredVoteToken() {
-      try {
-        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-      } catch (e) {}
-    }
-
-    function captureVoteTokenFromUrl() {
-      const url = new URL(window.location.href);
-      const token = (url.searchParams.get('token') || '').trim();
-      if (token) {
-        url.searchParams.delete('token');
-        const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
-        window.history.replaceState({}, document.title, cleanUrl);
-      }
-      return token;
-    }
-
-    function setTokenNotice(message) {
-      const notice = document.getElementById('tokenNotice');
-      notice.textContent = message;
-      notice.classList.toggle('visible', Boolean(message));
-    }
-
-    function updateSubmitState(isBusy = false) {
-      const submitButton = document.getElementById('submitButton');
-      submitButton.disabled = isBusy || !voteTokenUsable;
-      submitButton.textContent = currentVotedVenue ? 'Update vote' : 'Cast vote';
-    }
-
-    function venueIdFromName(venueName) {
-      const venue = VENUES.find((item) => item.name === venueName);
-      return venue ? venue.id : '';
-    }
-
-    function applyCurrentVote(venueName) {
-      currentVotedVenue = venueName || '';
-      document.querySelectorAll('.hero-venue-thumb').forEach((thumb) => {
-        const venue = VENUES.find((item) => item.id === thumb.dataset.selectVenue);
-        thumb.classList.toggle('voted', Boolean(venue && venue.name === currentVotedVenue));
-      });
-      document.querySelectorAll('.venue-radio').forEach((label) => {
-        const input = label.querySelector('input[name="venue"]');
-        label.classList.toggle('voted', Boolean(input && input.value === currentVotedVenue));
-      });
-      updateSubmitState();
-    }
-
-    async function verifyVoteToken() {
-      if (!voteToken) return;
-      try {
-        const response = await fetch(`/api/lunch-vote/token?token=${encodeURIComponent(voteToken)}`);
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok || !data.usable) {
-          voteTokenUsable = false;
-          applyCurrentVote('');
-          setTokenNotice(data.error || 'This voting link cannot be used.');
-          updateSubmitState();
-          return;
-        }
-        voteTokenUsable = true;
-        if (data.voted && data.venue) {
-          applyCurrentVote(data.venue);
-          const venueId = venueIdFromName(data.venue);
-          if (venueId) {
-            selectVenue(venueId, { scroll: false, focus: false });
-          }
-          setTokenNotice(`Your current vote is ${data.venue}. Select another venue to update it.`);
-        } else {
-          applyCurrentVote('');
-          setTokenNotice('Your voting link is ready. Cast one vote below.');
-        }
-        updateSubmitState();
-      } catch (e) {
-        setTokenNotice('Could not verify this voting link yet. You can still try to submit.');
-        updateSubmitState();
-      }
-    }
-
-    function initializeVoteToken() {
-      const urlToken = captureVoteTokenFromUrl();
-      if (urlToken && !isLikelyVoteToken(urlToken)) {
-        voteToken = '';
-        voteTokenUsable = false;
-        applyCurrentVote('');
-        clearStoredVoteToken();
-        setTokenNotice('This voting link is not valid. Ask the organiser for a fresh link.');
-        updateSubmitState();
-        return;
-      }
-
-      voteToken = urlToken || readStoredVoteToken();
-      if (!voteToken) {
-        voteTokenUsable = false;
-        applyCurrentVote('');
-        setTokenNotice('Use your unique voting link from the email invitation to cast a vote. Results are still available below.');
-        updateSubmitState();
-        return;
-      }
-
-      storeVoteToken(voteToken);
-      voteTokenUsable = true;
-      setTokenNotice('Checking your voting link...');
-      updateSubmitState();
-      verifyVoteToken();
-    }
-
-    function renderHeroThumbnails() {
-      const strip = document.getElementById('heroVenueStrip');
-      strip.replaceChildren();
-
-      VENUES.forEach((venue) => {
-        const button = document.createElement('button');
-        button.className = 'hero-venue-thumb';
-        button.type = 'button';
-        button.dataset.selectVenue = venue.id;
-        button.setAttribute('aria-pressed', 'false');
-        button.setAttribute('aria-label', `Select ${venue.name}, ${venue.cuisine}, ${venue.walkTime} walk`);
-        button.addEventListener('click', () => selectVenue(venue.id));
-
-        const img = document.createElement('img');
-        img.src = venue.image;
-        img.alt = `${venue.name} venue thumbnail`;
-        img.width = 320;
-        img.height = 240;
-        img.addEventListener('error', () => {
-          if (!img.dataset.fallbackApplied) {
-            img.dataset.fallbackApplied = 'true';
-            img.src = venue.fallbackImage;
-          }
-        });
-
-        const overlay = document.createElement('span');
-        overlay.className = 'thumb-overlay';
-        overlay.innerHTML = `<strong>${venue.name}</strong><span>${venue.cuisine}</span><em>${venue.walkTime} walk</em>`;
-
-        button.append(img, overlay);
-        strip.append(button);
-      });
-    }
-
-    function renderVenueRadios() {
-      const choices = document.getElementById('venueChoices');
-      choices.replaceChildren();
-
-      VENUES.forEach((venue) => {
-        const label = document.createElement('label');
-        label.className = 'venue-radio';
-        label.htmlFor = `venue-${venue.id}`;
-
-        const input = document.createElement('input');
-        input.id = `venue-${venue.id}`;
-        input.type = 'radio';
-        input.name = 'venue';
-        input.value = venue.name;
-        input.required = true;
-        input.dataset.venueId = venue.id;
-        input.addEventListener('change', () => selectVenue(venue.id, { scroll: false, focus: false }));
-
-        const title = document.createElement('strong');
-        title.innerHTML = `${venue.name}<em>${venue.walkTime} walk</em>`;
-
-        const cuisine = document.createElement('span');
-        cuisine.textContent = venue.cuisine;
-
-        const details = document.createElement('small');
-        details.textContent = `${venue.vibe} ${venue.orderMethod}`;
-
-        label.append(input, title, cuisine, details);
-        choices.append(label);
-      });
-    }
-
-    function selectVenue(venueId, options = {}) {
-      const venue = VENUES.find((item) => item.id === venueId);
-      if (!venue) return;
-
-      document.querySelectorAll('.hero-venue-thumb').forEach((thumb) => {
-        thumb.setAttribute('aria-pressed', thumb.dataset.selectVenue === venueId ? 'true' : 'false');
-      });
-
-      document.querySelectorAll('.venue-radio').forEach((label) => label.classList.remove('selected'));
-      const radio = document.getElementById(`venue-${venue.id}`);
-      if (radio) {
-        radio.checked = true;
-        radio.closest('.venue-radio').classList.add('selected');
-      }
-
-      if (options.scroll !== false) {
-        document.getElementById('voteCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      if (options.focus !== false && radio) {
-        window.setTimeout(() => radio.focus({ preventScroll: true }), 260);
-      }
-    }
-
-    async function submitVote(event) {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const selected = form.querySelector('input[name="venue"]:checked');
-      const submitButton = document.getElementById('submitButton');
-      const payload = {
-        token: voteToken,
-        venue: selected ? selected.value : '',
-        dietary: document.getElementById('dietary').value.trim(),
-        comment: document.getElementById('comment').value.trim(),
-        website: document.getElementById('website').value.trim()
-      };
-
-      if (!isLikelyVoteToken(payload.token)) {
-        setStatus('Use your unique voting link from the email invitation.', 'error');
-        return;
-      }
-      if (!payload.venue) {
-        setStatus('Choose a venue before casting your vote.', 'error');
-        return;
-      }
-      if (payload.dietary.length > 500 || payload.comment.length > 500) {
-        setStatus('One of the text fields is longer than allowed.', 'error');
-        return;
-      }
-      if (payload.website) {
-        setStatus('Submission could not be accepted.', 'error');
-        return;
-      }
-
-      submitButton.disabled = true;
-      setStatus('Submitting your vote...', 'pending');
-
-      try {
-        const response = await fetch('/api/lunch-vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) {
-          throw new Error(data.error || 'Vote could not be recorded.');
-        }
-
-        voteTokenUsable = true;
-        applyCurrentVote(data.venue || payload.venue);
-        const venueId = venueIdFromName(data.venue || payload.venue);
-        if (venueId) {
-          selectVenue(venueId, { scroll: false, focus: false });
-        }
-        setTokenNotice(`Your current vote is ${data.venue || payload.venue}. Select another venue to update it.`);
-        setStatus(data.message || 'Vote recorded.', 'success');
-        await loadResults();
-      } catch (error) {
-        setStatus(error.message || 'Vote could not be recorded.', 'error');
-      } finally {
-        updateSubmitState();
-      }
-    }
-
-    async function loadResults() {
-      const summary = document.getElementById('resultsSummary');
-      summary.textContent = 'Loading results...';
-      try {
-        const response = await fetch('/api/lunch-vote/results');
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Results could not be loaded.');
-        }
-        renderResults(data);
-      } catch (error) {
-        summary.textContent = 'Results are unavailable right now.';
-        document.getElementById('resultsList').replaceChildren();
-      }
-    }
-
-    function renderResults(data) {
-      const total = Number(data.total) || 0;
-      const list = document.getElementById('resultsList');
-      const summary = document.getElementById('resultsSummary');
-      const options = Array.isArray(data.options) ? data.options : [];
-
-      summary.textContent = `${total} total vote${total === 1 ? '' : 's'}`;
-      list.replaceChildren();
-
-      VENUES.forEach((venue) => {
-        const result = options.find((item) => item.venue === venue.name) || { votes: 0, percentage: 0 };
-        const votes = Number(result.votes) || 0;
-        const percentage = Number(result.percentage) || 0;
-
-        const row = document.createElement('div');
-        row.className = 'result-row';
-        row.setAttribute('aria-label', `${venue.name}: ${votes} vote${votes === 1 ? '' : 's'}, ${percentage.toFixed(1)} percent`);
-
-        const meta = document.createElement('div');
-        meta.className = 'result-meta';
-        meta.innerHTML = `<strong>${venue.name}</strong><span>${votes} vote${votes === 1 ? '' : 's'} · ${percentage.toFixed(1)}%</span>`;
-
-        const track = document.createElement('div');
-        track.className = 'result-track';
-        const fill = document.createElement('span');
-        fill.className = 'result-fill';
-        fill.style.width = `${Math.max(0, Math.min(100, percentage))}%`;
-        track.append(fill);
-
-        row.append(meta, track);
-        list.append(row);
-      });
-    }
-
-    function setStatus(message, type) {
-      const status = document.getElementById('voteStatus');
-      status.textContent = message;
-      status.className = `status visible ${type || ''}`;
-    }
-
-    function renderDetailsTable() {
-      const body = document.getElementById('detailsTableBody');
-      body.replaceChildren();
-      VENUES.forEach((venue) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><strong>${venue.name}</strong></td>
-          <td>${venue.cuisine}</td>
-          <td>${venue.vibe}</td>
-          <td>${venue.orderMethod}</td>
-          <td><span class="badge">${venue.walkTime}</span></td>
-        `;
-        body.append(row);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      renderHeroThumbnails();
-      renderVenueRadios();
-      renderDetailsTable();
-      document.getElementById('voteForm').addEventListener('submit', submitVote);
-      document.getElementById('refreshResults').addEventListener('click', loadResults);
-      initializeVoteToken();
-      loadResults();
-    });
-  </script>
+  <script src="/lunch-vote/poll-vote.js" defer></script>
 </body>
 </html>

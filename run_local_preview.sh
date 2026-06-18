@@ -38,6 +38,7 @@ mkdir -p "${DATA_DIR}"
 export VOTE_DB_PATH="${VOTE_DB_PATH:-${DATA_DIR}/lunch-votes.sqlite}"
 export VOTE_IP_HASH_SALT="${VOTE_IP_HASH_SALT:-local-preview-salt}"
 export VOTE_TOKEN_HASH_SALT="${VOTE_TOKEN_HASH_SALT:-local-preview-token-salt}"
+export POLL_CONFIG_DIR="${POLL_CONFIG_DIR:-${SCRIPT_DIR}/polls}"
 export VOTE_API_HOST="${API_HOST}"
 export PORT="${API_PORT}"
 
@@ -93,7 +94,7 @@ NGINX
 
 PREVIEW_PORT="$(preview_host_port "$PREVIEW_PUBLISH")"
 echo "Preview: http://localhost:${PREVIEW_PORT}/lunch-vote/"
-echo "API:     http://localhost:${PREVIEW_PORT}/api/lunch-vote/results"
+echo "API:     http://localhost:${PREVIEW_PORT}/api/poll-vote/lunch-vote/results"
 
 docker run --rm \
   --add-host zoak-host.docker.internal:host-gateway \

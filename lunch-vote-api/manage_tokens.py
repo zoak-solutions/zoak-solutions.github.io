@@ -8,12 +8,21 @@ import sqlite3
 import sys
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from server import connect_db, hash_recipient_email, hash_vote_token, init_db, isoformat_utc, utc_now
+from server import (
+    DEFAULT_POLL_SLUG,
+    connect_db,
+    hash_recipient_email,
+    hash_vote_token,
+    init_db,
+    isoformat_utc,
+    load_poll_configs,
+    utc_now,
+)
 
 
 DEFAULT_BASE_URL = "https://zoak.solutions/lunch-vote/"
-DEFAULT_EMAIL_FROM = "ZOAK Lunch Vote <no-reply@zoak.solutions>"
-DEFAULT_EMAIL_SUBJECT = "Your ZOAK lunch vote link"
+DEFAULT_EMAIL_FROM = "ZOAK Poll Vote <no-reply@zoak.solutions>"
+DEFAULT_EMAIL_SUBJECT = "Your ZOAK poll vote link"
 
 
 def header_value(value):
@@ -53,17 +62,18 @@ def read_voters(path):
                 yield row
 
 
-def insert_token(conn, recipient_label="", recipient_email=""):
+def insert_token(conn, poll_slug, recipient_label="", recipient_email=""):
     created_at = isoformat_utc(utc_now())
     for _ in range(5):
         token = secrets.token_urlsafe(32)
         try:
             conn.execute(
                 """
-                INSERT INTO vote_tokens (token_hash, recipient_label, recipient_email_hash, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO vote_tokens (poll_slug, token_hash, recipient_label, recipient_email_hash, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
+                    poll_slug,
                     hash_vote_token(token),
                     recipient_label.strip(),
                     hash_recipient_email(recipient_email),
@@ -85,7 +95,7 @@ def build_mock_email(row, args):
 
     body = f"""Hi {recipient},
 
-Please vote for the next ZOAK lunch using your unique link:
+Please vote in the ZOAK poll using your unique link:
 {vote_link}
 
 This link is unique to you. Do not forward it.
@@ -126,6 +136,8 @@ def write_mock_emails(output_rows, args):
 
 
 def generate(args):
+    if args.poll_slug not in load_poll_configs():
+        raise SystemExit(f"Poll config not found for {args.poll_slug!r}.")
     init_db()
     rows = list(read_voters(args.voters)) if args.voters else [{} for _ in range(args.count)]
     if not rows:
@@ -140,7 +152,7 @@ def generate(args):
             email = (row.get(args.email_column) or "").strip()
             name = (row.get(args.name_column) or "").strip()
             recipient_label = name or email
-            token = insert_token(conn, recipient_label=recipient_label, recipient_email=email)
+            token = insert_token(conn, args.poll_slug, recipient_label=recipient_label, recipient_email=email)
             output_row = dict(row)
             output_row["token"] = token
             output_row["vote_link"] = build_vote_link(args.base_url, token)
@@ -159,13 +171,14 @@ def generate(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Manage unique lunch vote tokens.")
+    parser = argparse.ArgumentParser(description="Manage unique poll vote tokens.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     generate_parser = subparsers.add_parser("generate", help="Generate unique voter links.")
     generate_parser.add_argument("--voters", help="CSV with at least an email column and optional name column.")
     generate_parser.add_argument("--count", type=int, default=0, help="Generate anonymous links when no voters CSV is supplied.")
     generate_parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Base lunch-vote URL.")
+    generate_parser.add_argument("--poll-slug", default=DEFAULT_POLL_SLUG, help="PollSlug from the poll instance YAML.")
     generate_parser.add_argument("--output", help="Output CSV path. Defaults to stdout.")
     generate_parser.add_argument("--mock-email-dir", help="Directory where local .eml mockups should be written.")
     generate_parser.add_argument("--email-from", default=DEFAULT_EMAIL_FROM)

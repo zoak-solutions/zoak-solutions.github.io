@@ -20,6 +20,7 @@ services:
       - ${APP_ENV_FILE:-.env}
     volumes:
       - lunch_vote_data:/data
+      - ${POLL_CONFIG_HOST_DIR:-./polls}:/polls:ro
     restart: unless-stopped
 
   lunch_vote_token_admin:
@@ -41,6 +42,7 @@ services:
     volumes:
       - lunch_vote_data:/data
       - ./local-sensitive:/work
+      - ${POLL_CONFIG_HOST_DIR:-./polls}:/polls:ro
     restart: "no"
 
 configs:

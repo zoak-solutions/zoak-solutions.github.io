@@ -1,0 +1,74 @@
+PollTitle: Vote for Lunch
+PollDescription: Pick your preferred venue for the next ZOAK lunch.
+PollSlug: lunch-vote
+candidates:
+  - name: Hazel
+    details: Ultra-premium, crisp, and beautifully designed. Modern AU and European plates.
+    slug: hazel
+    img: /assets/lunch-vote/hazel.webp
+    informationUrl: https://www.hazelrestaurant.com.au/
+    tags:
+      - key: Cuisine
+        val: Modern AU / European
+      - key: Atmosphere
+        val: Ultra-premium
+      - key: Order
+        val: A la carte or shared wood-fired plates
+      - key: Walk
+        val: 1 min
+  - name: Il Solito Posto
+    details: Warm, legendary underground corporate institution serving classic Italian.
+    slug: il-solito-posto
+    img: /assets/lunch-vote/il-solito-posto.webp
+    informationUrl: https://www.ilsolitoposto.com.au/
+    tags:
+      - key: Cuisine
+        val: Classic Italian
+      - key: Atmosphere
+        val: Warm underground institution
+      - key: Order
+        val: Traditional a la carte
+      - key: Walk
+        val: 2 mins
+  - name: Supernormal
+    details: Lively, trendy, and high-energy contemporary Asian dining.
+    slug: supernormal
+    img: /assets/lunch-vote/supernormal.webp
+    informationUrl: https://supernormal.net.au/
+    tags:
+      - key: Cuisine
+        val: Contemporary Asian
+      - key: Atmosphere
+        val: Lively and iconic
+      - key: Order
+        val: Shared a la carte
+      - key: Walk
+        val: 2 mins
+  - name: Tazio
+    details: Quiet and spacious historic warehouse serving contemporary Italian.
+    slug: tazio
+    img: /assets/lunch-vote/tazio.webp
+    informationUrl: https://tazio.com.au/
+    tags:
+      - key: Cuisine
+        val: Contemporary Italian
+      - key: Atmosphere
+        val: Quiet and spacious
+      - key: Order
+        val: Individual plates or structured menu
+      - key: Walk
+        val: 3 mins
+  - name: Rare Steakhouse
+    details: Classic, polished, and long-standing premium steakhouse.
+    slug: rare-steakhouse
+    img: /assets/lunch-vote/rare-steakhouse.webp
+    informationUrl: https://raresteakhouse.com.au/
+    tags:
+      - key: Cuisine
+        val: Premium Steakhouse
+      - key: Atmosphere
+        val: Classic and polished
+      - key: Order
+        val: Traditional a la carte
+      - key: Walk
+        val: 4 mins

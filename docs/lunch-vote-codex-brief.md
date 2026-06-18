@@ -336,7 +336,7 @@ Required behavior:
 Use:
 
 ```text
-POST /api/lunch-vote
+POST /api/poll-vote/<PollSlug>
 Content-Type: application/json
 ```
 
@@ -345,7 +345,7 @@ Content-Type: application/json
 Show aggregate public results from:
 
 ```text
-GET /api/lunch-vote/results
+GET /api/poll-vote/<PollSlug>/results
 ```
 
 Display:
@@ -360,13 +360,11 @@ Display:
 
 No names, comments, dietary notes, IP addresses, or user agents should be shown publicly.
 
-### Details card
-
-Include the original venue matrix as a compact table for comparison.
+The only sections below the hero are `voteCard` and `resultsCard`.
 
 ## Client-side JavaScript
 
-Implement inline JavaScript in `lunch-vote/index.html`.
+Implement JavaScript in `lunch-vote/poll-vote.js`.
 
 Functions to include:
 
@@ -374,8 +372,8 @@ Functions to include:
 initializeVoteToken()
 verifyVoteToken()
 renderHeroThumbnails()
-renderVenueRadios()
-selectVenue(venueId)
+renderCandidateRadios()
+selectCandidate(candidateSlug)
 submitVote(event)
 loadResults()
 renderResults(data)
@@ -385,7 +383,7 @@ setStatus(message, type)
 Validation:
 
 ```text
-- Venue is required.
+- Candidate is required.
 - One-time vote token is required.
 - Dietary note max length: 500 characters.
 - Comment max length: 500 characters.
@@ -395,7 +393,7 @@ Validation:
 Fetch behavior:
 
 ```js
-const response = await fetch('/api/lunch-vote', {
+const response = await fetch(`/api/poll-vote/${poll.PollSlug}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload)
@@ -405,11 +403,9 @@ const response = await fetch('/api/lunch-vote', {
 After successful submission:
 
 ```text
-- Clear the stored session token.
-- Mark the email link as used.
 - Show success message.
 - Reload results.
-- Keep selected venue visible.
+- Keep the session token and selected candidate visible so the same voter can update their current vote without inflating results.
 ```
 
 Image fallback behavior:
@@ -443,11 +439,15 @@ Endpoints:
 
 ```text
 GET  /health
-POST /lunch-vote
-GET  /lunch-vote/results
+POST /poll-vote/<PollSlug>
+GET  /poll-vote/<PollSlug>/config
+GET  /poll-vote/<PollSlug>/results
+GET  /poll-vote/<PollSlug>/results-card.png
+GET  /poll-vote/<PollSlug>/results-embed.html
+GET  /poll-vote/<PollSlug>/token
 ```
 
-Important: if Caddy uses `handle_path /api/*`, the backend will receive `/lunch-vote`, not `/api/lunch-vote`.
+Important: if Caddy uses `handle_path /api/*`, the backend will receive `/poll-vote/<PollSlug>`, not `/api/poll-vote/<PollSlug>`.
 
 ### Database schema
 
@@ -456,6 +456,8 @@ Use SQLite:
 ```sql
 CREATE TABLE IF NOT EXISTS votes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  poll_slug TEXT,
+  candidate_slug TEXT,
   venue TEXT NOT NULL,
   voter_name TEXT,
   dietary_note TEXT,
@@ -469,6 +471,7 @@ CREATE TABLE IF NOT EXISTS votes (
 
 CREATE TABLE IF NOT EXISTS vote_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  poll_slug TEXT,
   token_hash TEXT NOT NULL UNIQUE,
   recipient_label TEXT,
   recipient_email_hash TEXT,
@@ -478,34 +481,26 @@ CREATE TABLE IF NOT EXISTS vote_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at);
+CREATE INDEX IF NOT EXISTS idx_votes_poll_slug ON votes(poll_slug);
+CREATE INDEX IF NOT EXISTS idx_votes_candidate_slug ON votes(candidate_slug);
 CREATE INDEX IF NOT EXISTS idx_votes_venue ON votes(venue);
 CREATE INDEX IF NOT EXISTS idx_votes_ip_hash ON votes(ip_hash);
 CREATE INDEX IF NOT EXISTS idx_votes_vote_token_hash ON votes(vote_token_hash);
 CREATE INDEX IF NOT EXISTS idx_vote_tokens_used_at ON vote_tokens(used_at);
 ```
 
-### Allowed venues
+### Allowed candidates
 
-Server must reject any venue not in this set:
+Server must reject any candidate slug not configured in the active poll instance YAML.
 
-```python
-ALLOWED_VENUES = {
-    "Hazel",
-    "Il Solito Posto",
-    "Supernormal",
-    "Tazio",
-    "Rare Steakhouse",
-}
-```
-
-### POST `/lunch-vote`
+### POST `/poll-vote/<PollSlug>`
 
 Request body:
 
 ```json
 {
   "token": "unique-token-from-email-link",
-  "venue": "Hazel",
+  "candidateSlug": "hazel",
   "dietary": "No seafood",
   "comment": "Prefer somewhere quiet",
   "website": ""
@@ -517,7 +512,7 @@ Server behavior:
 ```text
 - Reject non-JSON requests.
 - Reject payloads over 16 KB.
-- Reject missing or invalid venue.
+- Reject missing or invalid candidate.
 - Reject missing, invalid, or unknown vote tokens.
 - Reject if honeypot field "website" is non-empty.
 - Trim all text fields.
@@ -535,6 +530,8 @@ Response success:
   "ok": true,
   "message": "Vote recorded.",
   "voted": true,
+  "candidateSlug": "hazel",
+  "candidateName": "Hazel",
   "venue": "Hazel"
 }
 ```
@@ -544,11 +541,11 @@ Response error:
 ```json
 {
   "ok": false,
-  "error": "Invalid venue."
+  "error": "Invalid candidate."
 }
 ```
 
-### GET `/lunch-vote/token`
+### GET `/poll-vote/<PollSlug>/token`
 
 Query string:
 
@@ -563,6 +560,9 @@ Response for a token with no current vote:
   "ok": true,
   "usable": true,
   "voted": false,
+  "pollClosed": false,
+  "candidateSlug": "",
+  "candidateName": "",
   "venue": ""
 }
 ```
@@ -574,11 +574,14 @@ Response for a token with a current vote:
   "ok": true,
   "usable": true,
   "voted": true,
+  "pollClosed": false,
+  "candidateSlug": "hazel",
+  "candidateName": "Hazel",
   "venue": "Hazel"
 }
 ```
 
-### GET `/lunch-vote/results`
+### GET `/poll-vote/<PollSlug>/results`
 
 Response:
 
@@ -586,16 +589,13 @@ Response:
 {
   "total": 12,
   "options": [
-    { "venue": "Hazel", "votes": 4, "percentage": 33.3 },
-    { "venue": "Il Solito Posto", "votes": 2, "percentage": 16.7 },
-    { "venue": "Supernormal", "votes": 3, "percentage": 25.0 },
-    { "venue": "Tazio", "votes": 1, "percentage": 8.3 },
-    { "venue": "Rare Steakhouse", "votes": 2, "percentage": 16.7 }
+    { "name": "Hazel", "slug": "hazel", "venue": "Hazel", "votes": 4, "percentage": 33.3 },
+    { "name": "Il Solito Posto", "slug": "il-solito-posto", "venue": "Il Solito Posto", "votes": 2, "percentage": 16.7 }
   ]
 }
 ```
 
-Always return all five venues, even if some have zero votes.
+Always return all configured candidates, even if some have zero votes.
 
 ## Dockerfile
 
@@ -701,8 +701,8 @@ handle {
 With this config:
 
 ```text
-Browser request: /api/lunch-vote
-Backend receives: /lunch-vote
+Browser request: /api/poll-vote/lunch-vote
+Backend receives: /poll-vote/lunch-vote
 ```
 
 That path-stripping behavior is expected when using `handle_path`.
@@ -744,7 +744,7 @@ For this lunch poll, keep privacy lightweight but sensible:
 Implemented token voting rule:
 
 ```text
-Allow one current vote per generated email invitation token. The organiser generates one random token per voter and sends each voter a unique /lunch-vote/?token=... link. The first submission creates that token's vote; later submissions from the same token update the same vote row, so results do not inflate.
+Allow one current vote per generated email invitation token and poll slug. The organiser generates one random token per voter and sends each voter a unique /lunch-vote/?token=... link. The first submission creates that token's vote; later submissions from the same token update the same vote row, so results do not inflate.
 ```
 
 Successful update response:
@@ -754,9 +754,19 @@ Successful update response:
   "ok": true,
   "message": "Vote updated.",
   "voted": true,
+  "candidateSlug": "tazio",
+  "candidateName": "Tazio",
   "venue": "Tazio"
 }
 ```
+
+## Poll instance configuration
+
+Poll instances live in `polls/<poll_instance>.yaml`. Required top-level fields are `PollTitle`, `PollDescription`, and `PollSlug`; the API also accepts `PullSlug` for compatibility with the original request wording.
+
+Each candidate must include `name`, `details`, `slug`, and `img`. It may also include `informationUrl` and `tags`, where tags are a list of `{key, val}` pairs. The API accepts the misspelled `informaionUrl` alias and normalizes it to `informationUrl`.
+
+Optional `closeTime` must be an ISO-8601 timestamp. When present, the page displays `Closes in DD:HH:MM.SS`; once the timestamp is reached, the API rejects new or updated votes with `403 This poll is closed.`
 
 ## Unique link email workflow
 
@@ -771,6 +781,7 @@ Generate individualized mail-merge links through the internal token admin contai
 
 ```bash
 docker compose -f docker-compose-example.yaml run --rm lunch_vote_token_admin generate \
+  --poll-slug lunch-vote \
   --voters voters.csv \
   --base-url https://zoak.solutions/lunch-vote/ \
   --output lunch-vote-links.csv \
@@ -786,13 +797,13 @@ Send `lunch-vote-links.csv` through an email mail-merge tool using the `vote_lin
 Use this endpoint to copy an email/calendar-safe HTML fragment:
 
 ```text
-/api/lunch-vote/results-embed.html
+/api/poll-vote/lunch-vote/results-embed.html
 ```
 
 The fragment uses a linked PNG for live results:
 
 ```text
-/api/lunch-vote/results-card.png
+/api/poll-vote/lunch-vote/results-card.png
 ```
 
 JavaScript, iframes, and fetched HTML are not reliable in email or calendar invites. Remote images can also be blocked or cached by some clients, so every embed includes a normal link back to `/lunch-vote/`.
@@ -803,23 +814,25 @@ The implementation is complete when:
 
 ```text
 - /lunch-vote/ loads as a standalone ZOAK-styled page.
-- The hero section shows five venue thumbnails.
-- Clicking a hero thumbnail selects the corresponding venue in the form.
-- The form submits to /api/lunch-vote.
+- The hero section shows configured candidate thumbnails.
+- The only sections below the hero are voteCard and resultsCard.
+- Clicking a hero thumbnail selects the corresponding candidate in the form.
+- The form submits to /api/poll-vote/<PollSlug>.
 - Votes persist in SQLite.
-- Each current vote is owned by a unique voter token and can be updated by that token.
-- Results load from /api/lunch-vote/results.
+- Each current vote is owned by a unique voter token and poll slug and can be updated by that token.
+- Results load from /api/poll-vote/<PollSlug>/results.
 - Results show aggregate counts only.
+- If closeTime is configured, the UI shows a countdown and the API rejects late votes.
 - The page works on mobile.
 - The page remains usable if a thumbnail fails to load.
-- The backend rejects invalid venues and honeypot submissions.
+- The backend rejects invalid candidates and honeypot submissions.
 - Caddy can serve the static page and reverse-proxy the API.
 ```
 
 ## Implementation order for Codex
 
 1. Copy the visual structure of `privacy_policy/index.html` into `lunch-vote/index.html`.
-2. Replace the legal content with the lunch voting hero, thumbnail strip, vote form, results card, and venue details table.
+2. Replace the legal content with the poll hero, thumbnail strip, vote card, and results card.
 3. Add local image references and fallback handling.
 4. Implement client-side rendering and form submission.
 5. Add `lunch-vote-api/server.py` with SQLite persistence.
@@ -830,17 +843,17 @@ The implementation is complete when:
 
    ```text
    curl http://localhost:8080/health
-   curl http://localhost:8080/lunch-vote/results
-   python3 lunch-vote-api/manage_tokens.py generate --count 1 --base-url http://localhost:8080/lunch-vote/ --output /tmp/lunch-vote-links.csv
-   curl -X POST http://localhost:8080/lunch-vote \
+   curl http://localhost:8080/poll-vote/lunch-vote/results
+   python3 lunch-vote-api/manage_tokens.py generate --poll-slug lunch-vote --count 1 --base-url http://localhost:8080/lunch-vote/ --output /tmp/lunch-vote-links.csv
+   curl -X POST http://localhost:8080/poll-vote/lunch-vote \
      -H 'Content-Type: application/json' \
-     -d '{"venue":"Hazel","token":"TOKEN_FROM_GENERATED_CSV","dietary":"","comment":"","website":""}'
+     -d '{"candidateSlug":"hazel","token":"TOKEN_FROM_GENERATED_CSV","dietary":"","comment":"","website":""}'
    ```
 10. Verify the browser flow through Caddy at:
 
 ```text
 /lunch-vote/
-/api/lunch-vote/results
+/api/poll-vote/lunch-vote/results
 ```
 
 [1]: https://caddyserver.com/docs/caddyfile/directives/file_server "file_server (Caddyfile directive) — Caddy Documentation"
