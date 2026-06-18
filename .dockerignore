@@ -1,14 +1,13 @@
+# Local-only token and PII workspaces.
+local-sensitive/
+**/local-sensitive/
+
 # Local secrets and runtime configuration.
 .env
 .env.*
-!.env.example
 
-# Local-only token and PII workspaces.
-**/local-sensitive/**
-!/local-sensitive/
-!/local-sensitive/.gitignore
-
-# Python caches and local tooling output.
+# Git and local tooling metadata.
+.git/
 __pycache__/
 *.py[cod]
 *$py.class

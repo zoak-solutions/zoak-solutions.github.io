@@ -3,10 +3,12 @@ import hashlib
 import json
 import os
 import sqlite3
+import struct
+import zlib
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 
 ALLOWED_VENUES = {
@@ -29,6 +31,51 @@ MAX_NOTE_LENGTH = 500
 MAX_TOKEN_LENGTH = 128
 DEFAULT_DB_PATH = "/data/lunch-votes.sqlite"
 TOKEN_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+RESULTS_CARD_WIDTH = 700
+RESULTS_CARD_HEIGHT = 360
+FONT_5X7 = {
+    " ": ["000", "000", "000", "000", "000", "000", "000"],
+    ".": ["000", "000", "000", "000", "000", "110", "110"],
+    "%": ["10001", "00010", "00100", "01000", "10001", "00000", "00000"],
+    "-": ["00000", "00000", "00000", "11111", "00000", "00000", "00000"],
+    ":": ["000", "110", "110", "000", "110", "110", "000"],
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+    "3": ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "10000", "11110", "00001", "00001", "11110"],
+    "6": ["01110", "10000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00001", "01110"],
+    "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "B": ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+    "C": ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
+    "D": ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+    "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    "F": ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+    "G": ["01110", "10001", "10000", "10111", "10001", "10001", "01110"],
+    "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "I": ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+    "J": ["00111", "00010", "00010", "00010", "00010", "10010", "01100"],
+    "K": ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    "M": ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+    "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "P": ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+    "Q": ["01110", "10001", "10001", "10001", "10101", "10010", "01101"],
+    "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    "S": ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+    "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "U": ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "V": ["10001", "10001", "10001", "10001", "10001", "01010", "00100"],
+    "W": ["10001", "10001", "10001", "10101", "10101", "10101", "01010"],
+    "X": ["10001", "10001", "01010", "00100", "01010", "10001", "10001"],
+    "Y": ["10001", "10001", "01010", "00100", "00100", "00100", "00100"],
+    "Z": ["11111", "00001", "00010", "00100", "01000", "10000", "11111"],
+}
 
 
 def env_int(name, default):
@@ -41,6 +88,7 @@ def env_int(name, default):
 DB_PATH = os.environ.get("VOTE_DB_PATH", DEFAULT_DB_PATH)
 IP_HASH_SALT = os.environ.get("VOTE_IP_HASH_SALT", "")
 TOKEN_HASH_SALT = os.environ.get("VOTE_TOKEN_HASH_SALT", IP_HASH_SALT)
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
 
 def utc_now():
@@ -155,6 +203,159 @@ def is_valid_vote_token(value):
     return 24 <= len(value) <= MAX_TOKEN_LENGTH and all(character in TOKEN_CHARS for character in value)
 
 
+def vote_results():
+    with connect_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT venue, COUNT(*) AS votes
+            FROM votes
+            GROUP BY venue
+            """
+        ).fetchall()
+
+    counts = {venue: 0 for venue in VENUE_ORDER}
+    for row in rows:
+        if row["venue"] in counts:
+            counts[row["venue"]] = int(row["votes"])
+
+    total = sum(counts.values())
+    options = []
+    for venue in VENUE_ORDER:
+        votes = counts[venue]
+        percentage = round((votes / total) * 100, 1) if total else 0
+        options.append({"venue": venue, "votes": votes, "percentage": percentage})
+    return {"total": total, "options": options}
+
+
+def rgb(hex_color):
+    value = hex_color.lstrip("#")
+    return tuple(int(value[index : index + 2], 16) for index in (0, 2, 4))
+
+
+class PngCanvas:
+    def __init__(self, width, height, background):
+        self.width = width
+        self.height = height
+        self.pixels = [[background for _ in range(width)] for _ in range(height)]
+
+    def rect(self, x, y, width, height, color):
+        left = max(0, int(x))
+        top = max(0, int(y))
+        right = min(self.width, int(x + width))
+        bottom = min(self.height, int(y + height))
+        for row in range(top, bottom):
+            self.pixels[row][left:right] = [color] * max(0, right - left)
+
+    def text_width(self, text, scale):
+        width = 0
+        for character in text.upper():
+            pattern = FONT_5X7.get(character, FONT_5X7[" "])
+            width += (len(pattern[0]) + 1) * scale
+        return max(0, width - scale)
+
+    def text(self, x, y, text, color, scale=2):
+        cursor = int(x)
+        for character in text.upper():
+            pattern = FONT_5X7.get(character, FONT_5X7[" "])
+            for row_index, row in enumerate(pattern):
+                for col_index, value in enumerate(row):
+                    if value == "1":
+                        self.rect(cursor + col_index * scale, y + row_index * scale, scale, scale, color)
+            cursor += (len(pattern[0]) + 1) * scale
+
+    def png_bytes(self):
+        raw_rows = []
+        for row in self.pixels:
+            raw_rows.append(b"\x00" + b"".join(bytes(pixel) for pixel in row))
+        raw = b"".join(raw_rows)
+        return (
+            b"\x89PNG\r\n\x1a\n"
+            + png_chunk(b"IHDR", struct.pack("!IIBBBBB", self.width, self.height, 8, 2, 0, 0, 0))
+            + png_chunk(b"IDAT", zlib.compress(raw, 9))
+            + png_chunk(b"IEND", b"")
+        )
+
+
+def png_chunk(kind, data):
+    return (
+        struct.pack("!I", len(data))
+        + kind
+        + data
+        + struct.pack("!I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+    )
+
+
+def render_results_card(results):
+    colors = {
+        "background": rgb("#F7F3EA"),
+        "ink": rgb("#111111"),
+        "muted": rgb("#5A5A5A"),
+        "line": rgb("#D8D1C3"),
+        "track": rgb("#E7DFD1"),
+        "gold": rgb("#F1B51C"),
+        "amber": rgb("#D98918"),
+        "green": rgb("#1D8F5C"),
+    }
+    canvas = PngCanvas(RESULTS_CARD_WIDTH, RESULTS_CARD_HEIGHT, colors["background"])
+    canvas.rect(0, 0, RESULTS_CARD_WIDTH, 8, colors["gold"])
+    canvas.text(36, 34, "ZOAK LUNCH VOTE", colors["ink"], 3)
+    canvas.text(36, 74, f"LIVE RESULTS - {results['total']} TOTAL VOTES", colors["muted"], 2)
+    canvas.rect(36, 102, 628, 2, colors["line"])
+
+    top = 124
+    bar_x = 290
+    bar_width = 260
+    row_height = 40
+    max_votes = max([option["votes"] for option in results["options"]] + [1])
+    for index, option in enumerate(results["options"]):
+        y = top + index * row_height
+        votes = int(option["votes"])
+        percentage = float(option["percentage"])
+        filled = int(round((votes / max_votes) * bar_width)) if max_votes else 0
+        label = option["venue"][:22]
+        count = f"{votes} VOTE{'S' if votes != 1 else ''} - {percentage:.1f}%"
+        fill_color = colors["green"] if votes else colors["line"]
+
+        canvas.text(36, y, label, colors["ink"], 2)
+        canvas.rect(bar_x, y + 2, bar_width, 14, colors["track"])
+        canvas.rect(bar_x, y + 2, max(2 if votes else 0, filled), 14, fill_color)
+        canvas.text(568, y, count, colors["muted"], 1)
+
+    canvas.rect(36, 326, 628, 1, colors["line"])
+    canvas.text(36, 338, "OPEN THE LUNCH VOTE PAGE FOR FULL DETAILS", colors["muted"], 1)
+    return canvas.png_bytes()
+
+
+def public_base_url(handler):
+    if PUBLIC_BASE_URL:
+        return PUBLIC_BASE_URL
+    proto = handler.headers.get("X-Forwarded-Proto", "http").split(",", 1)[0].strip() or "http"
+    host = handler.headers.get("X-Forwarded-Host") or handler.headers.get("Host") or "localhost"
+    return f"{proto}://{host}".rstrip("/")
+
+
+def results_embed_html(handler):
+    base_url = public_base_url(handler)
+    image_url = f"{base_url}/api/lunch-vote/results-card.png"
+    live_url = f"{base_url}/lunch-vote/"
+    escaped_image = quote(image_url, safe=":/?&=%.-_")
+    escaped_live = quote(live_url, safe=":/?&=%.-_")
+    return f"""<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:700px;font-family:Arial,sans-serif;">
+  <tr>
+    <td style="padding:0;">
+      <a href="{escaped_live}" style="text-decoration:none;">
+        <img src="{escaped_image}" width="700" height="360" alt="Live ZOAK lunch vote results" style="display:block;width:100%;max-width:700px;height:auto;border:0;outline:none;text-decoration:none;" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0 0 0;font-size:13px;line-height:18px;color:#555555;">
+      If the live results image does not load, open <a href="{escaped_live}" style="color:#8a5a00;">the lunch vote page</a>.
+    </td>
+  </tr>
+</table>"""
+
+
 def clean_text(payload, key, max_length):
     value = payload.get(key, "")
     if value is None:
@@ -177,6 +378,12 @@ class LunchVoteHandler(BaseHTTPRequestHandler):
             return
         if path == "/lunch-vote/results":
             self.handle_results()
+            return
+        if path == "/lunch-vote/results-card.png":
+            self.handle_results_card()
+            return
+        if path == "/lunch-vote/results-embed.html":
+            self.handle_results_embed()
             return
         if path == "/lunch-vote/token":
             self.handle_token_status()
@@ -351,28 +558,25 @@ class LunchVoteHandler(BaseHTTPRequestHandler):
         self.send_json({"ok": True, "usable": True, "voted": bool(voted_venue), "venue": voted_venue})
 
     def handle_results(self):
-        with connect_db() as conn:
-            rows = conn.execute(
-                """
-                SELECT venue, COUNT(*) AS votes
-                FROM votes
-                GROUP BY venue
-                """
-            ).fetchall()
+        self.send_json(vote_results())
 
-        counts = {venue: 0 for venue in VENUE_ORDER}
-        for row in rows:
-            if row["venue"] in counts:
-                counts[row["venue"]] = int(row["votes"])
+    def handle_results_card(self):
+        body = render_results_card(vote_results())
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store, no-cache, max-age=0")
+        self.end_headers()
+        self.wfile.write(body)
 
-        total = sum(counts.values())
-        options = []
-        for venue in VENUE_ORDER:
-            votes = counts[venue]
-            percentage = round((votes / total) * 100, 1) if total else 0
-            options.append({"venue": venue, "votes": votes, "percentage": percentage})
-
-        self.send_json({"total": total, "options": options})
+    def handle_results_embed(self):
+        body = results_embed_html(self).encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def send_json(self, payload, status=HTTPStatus.OK):
         body = json.dumps(payload).encode("utf-8")

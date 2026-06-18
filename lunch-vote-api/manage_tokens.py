@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import os
+import re
 import secrets
 import sqlite3
 import sys
@@ -10,6 +12,28 @@ from server import connect_db, hash_recipient_email, hash_vote_token, init_db, i
 
 
 DEFAULT_BASE_URL = "https://zoak.solutions/lunch-vote/"
+DEFAULT_EMAIL_FROM = "ZOAK Lunch Vote <no-reply@zoak.solutions>"
+DEFAULT_EMAIL_SUBJECT = "Your ZOAK lunch vote link"
+
+
+def header_value(value):
+    return " ".join(str(value or "").splitlines()).strip()
+
+
+def safe_filename(value, fallback):
+    filename = re.sub(r"[^A-Za-z0-9._-]+", "-", str(value or "").strip().lower()).strip(".-_")
+    return filename or fallback
+
+
+def unique_filename(base, used):
+    candidate = base
+    index = 2
+    while candidate in used:
+        stem, ext = os.path.splitext(base)
+        candidate = f"{stem}-{index}{ext}"
+        index += 1
+    used.add(candidate)
+    return candidate
 
 
 def build_vote_link(base_url, token):
@@ -52,6 +76,55 @@ def insert_token(conn, recipient_label="", recipient_email=""):
     raise RuntimeError("Could not generate a unique token after 5 attempts.")
 
 
+def build_mock_email(row, args):
+    email = header_value(row.get(args.email_column, ""))
+    name = header_value(row.get(args.name_column, ""))
+    recipient = name or email or "Lunch voter"
+    to_header = f"{name} <{email}>" if name and email else recipient
+    vote_link = row["vote_link"]
+
+    body = f"""Hi {recipient},
+
+Please vote for the next ZOAK lunch using your unique link:
+{vote_link}
+
+This link is unique to you. Do not forward it.
+
+Thanks,
+ZOAK Solutions
+"""
+
+    return "\n".join(
+        [
+            f"From: {header_value(args.email_from)}",
+            f"To: {to_header}",
+            f"Subject: {header_value(args.email_subject)}",
+            "MIME-Version: 1.0",
+            "Content-Type: text/plain; charset=utf-8",
+            "X-ZOAK-Mock-Email: true",
+            "",
+            body,
+        ]
+    )
+
+
+def write_mock_emails(output_rows, args):
+    if not args.mock_email_dir:
+        return 0
+
+    os.makedirs(args.mock_email_dir, exist_ok=True)
+    used_filenames = set()
+    for index, row in enumerate(output_rows, start=1):
+        email = row.get(args.email_column, "")
+        name = row.get(args.name_column, "")
+        base = safe_filename(email or name, f"voter-{index}")
+        filename = unique_filename(f"{base}.eml", used_filenames)
+        output_path = os.path.join(args.mock_email_dir, filename)
+        with open(output_path, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(build_mock_email(row, args))
+    return len(output_rows)
+
+
 def generate(args):
     init_db()
     rows = list(read_voters(args.voters)) if args.voters else [{} for _ in range(args.count)]
@@ -79,7 +152,10 @@ def generate(args):
         writer.writeheader()
         writer.writerows(output_rows)
 
+    drafted = write_mock_emails(output_rows, args)
     print(f"Generated {len(output_rows)} unique voter link(s).", file=sys.stderr)
+    if drafted:
+        print(f"Drafted {drafted} mock email(s) in {args.mock_email_dir}.", file=sys.stderr)
 
 
 def main():
@@ -91,6 +167,9 @@ def main():
     generate_parser.add_argument("--count", type=int, default=0, help="Generate anonymous links when no voters CSV is supplied.")
     generate_parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Base lunch-vote URL.")
     generate_parser.add_argument("--output", help="Output CSV path. Defaults to stdout.")
+    generate_parser.add_argument("--mock-email-dir", help="Directory where local .eml mockups should be written.")
+    generate_parser.add_argument("--email-from", default=DEFAULT_EMAIL_FROM)
+    generate_parser.add_argument("--email-subject", default=DEFAULT_EMAIL_SUBJECT)
     generate_parser.add_argument("--email-column", default="email")
     generate_parser.add_argument("--name-column", default="name")
     generate_parser.set_defaults(func=generate)

@@ -77,6 +77,14 @@ server {
     proxy_pass http://zoak-host.docker.internal:${API_PORT}/;
   }
 
+  location = /local-sensitive {
+    return 404;
+  }
+
+  location ^~ /local-sensitive/ {
+    return 404;
+  }
+
   location / {
     try_files \$uri \$uri/ =404;
   }

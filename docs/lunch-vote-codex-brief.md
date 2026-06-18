@@ -767,18 +767,35 @@ email,name
 person@example.com,Person Name
 ```
 
-Generate individualized mail-merge links:
+Generate individualized mail-merge links through the internal token admin container:
 
 ```bash
-VOTE_DB_PATH=/path/to/lunch-votes.sqlite \
-VOTE_TOKEN_HASH_SALT='production-secret' \
-python3 lunch-vote-api/manage_tokens.py generate \
+docker compose -f docker-compose-example.yaml run --rm lunch_vote_token_admin generate \
   --voters voters.csv \
   --base-url https://zoak.solutions/lunch-vote/ \
-  --output lunch-vote-links.csv
+  --output lunch-vote-links.csv \
+  --mock-email-dir mock-emails
 ```
 
+The admin container has no network access, mounts the same SQLite volume as the API at `/data`, and mounts the ignored `local-sensitive/` directory as `/work` for private CSV inputs and outputs.
+
 Send `lunch-vote-links.csv` through an email mail-merge tool using the `vote_link` column. Do not send one BCC email if every recipient needs a unique URL; use a per-recipient mail merge or transactional email job. The database stores token hashes and recipient email hashes only.
+
+## Email and calendar results embed
+
+Use this endpoint to copy an email/calendar-safe HTML fragment:
+
+```text
+/api/lunch-vote/results-embed.html
+```
+
+The fragment uses a linked PNG for live results:
+
+```text
+/api/lunch-vote/results-card.png
+```
+
+JavaScript, iframes, and fetched HTML are not reliable in email or calendar invites. Remote images can also be blocked or cached by some clients, so every embed includes a normal link back to `/lunch-vote/`.
 
 ## Acceptance criteria
 

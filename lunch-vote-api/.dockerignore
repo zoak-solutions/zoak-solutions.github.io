@@ -1,12 +1,10 @@
+# Local-only token and PII workspaces.
+local-sensitive/
+**/local-sensitive/
+
 # Local secrets and runtime configuration.
 .env
 .env.*
-!.env.example
-
-# Local-only token and PII workspaces.
-**/local-sensitive/**
-!/local-sensitive/
-!/local-sensitive/.gitignore
 
 # Python caches and local tooling output.
 __pycache__/
@@ -18,7 +16,7 @@ __pycache__/
 .venv/
 venv/
 
-# Local lunch-vote API data.
+# Local database files.
 *.sqlite
 *.sqlite3
 *.sqlite-*

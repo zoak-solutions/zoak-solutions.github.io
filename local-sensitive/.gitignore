@@ -1,0 +1,4 @@
+# Local-only workspace for token generation inputs/outputs and PII.
+# Everything in this directory is ignored by Git, except this file.
+*
+!.gitignore

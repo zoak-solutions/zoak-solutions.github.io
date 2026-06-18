@@ -4,7 +4,7 @@ services:
   zoak_site:
     image: caddy:2-alpine
     ports:
-      - "8088:80"
+      - "${SITE_PUBLISH:-8088:80}"
     volumes:
       - ./:/srv:ro
     configs:
@@ -17,10 +17,31 @@ services:
   lunch_vote_api:
     build: ./lunch-vote-api
     env_file:
-      - .env
+      - ${APP_ENV_FILE:-.env}
     volumes:
       - lunch_vote_data:/data
     restart: unless-stopped
+
+  lunch_vote_token_admin:
+    build:
+      context: ./lunch-vote-api
+      dockerfile: Dockerfile.tokens
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    profiles:
+      - tools
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - lunch_vote_data:/data
+      - ./local-sensitive:/work
+    restart: "no"
 
 configs:
   zoak_caddyfile:
@@ -32,6 +53,9 @@ configs:
         handle_path /api/* {
           reverse_proxy lunch_vote_api:8080
         }
+
+        @local_sensitive path /local-sensitive /local-sensitive/*
+        respond @local_sensitive 404
 
         file_server
       }
